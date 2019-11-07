@@ -1,0 +1,7 @@
+/vendor
+/test/app/vendor
+/test/composer-home/cache
+/tmp
+main
+*.pprof
+/test/docker/image
