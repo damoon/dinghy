@@ -11,7 +11,7 @@ import (
 	"github.com/minio/minio-go"
 )
 
-func fetch(mc *minio.Client, bucket, redirectURL string) func(w http.ResponseWriter, r *http.Request) {
+func presign(mc *minio.Client, bucket, redirectURL string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		objectName := strings.TrimPrefix(r.RequestURI, "/")
 		log.Printf("objectName: %v", objectName)

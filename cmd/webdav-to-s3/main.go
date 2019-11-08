@@ -23,6 +23,7 @@ func main() {
 	bucket := flag.String("bucket", "webdav", "s3 bucket name")
 	location := flag.String("location", "us-east-1", "s3 bucket location")
 	redirectURL := flag.String("redirectURL", "http://127.0.0.1:9000", "url to redirect to instead of 404 (minio)")
+	lightWeight := flag.Bool("light", true, "only support GET and PUT via redirects")
 
 	flag.Parse()
 
@@ -35,6 +36,7 @@ func main() {
 	log.Printf("bucket: %s\n", *bucket)
 	log.Printf("location: %s\n", *location)
 	log.Printf("redirectURL: %s\n", *redirectURL)
+	log.Printf("lightWeight: %v\n", *lightWeight)
 
 	transport := &http.Transport{
 		Dial: (&net.Dialer{
@@ -51,7 +53,7 @@ func main() {
 
 	go ensureBucket(minioClient, *bucket, *location)
 
-	server.RunServer(minioClient, *bucket, *adminAddr, *serviceAddr, *redirectURL)
+	server.RunServer(minioClient, *bucket, *adminAddr, *serviceAddr, *redirectURL, *lightWeight)
 }
 
 func ensureBucket(mc *minio.Client, bucket, location string) {

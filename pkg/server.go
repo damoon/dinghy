@@ -13,9 +13,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func RunServer(mc *minio.Client, bucket, adminAddr, serviceAddr, redirectURL string) {
+func RunServer(mc *minio.Client, bucket, adminAddr, serviceAddr, redirectURL string, minimalizm bool) {
 	serviceMux := http.NewServeMux()
-	serviceMux.Handle("/", http.TimeoutHandler(http.HandlerFunc(fetch(mc, bucket, redirectURL)), 30*time.Second, ""))
+	var handler http.HandlerFunc
+	switch minimalizm {
+	case true:
+		handler = presign(mc, bucket, redirectURL)
+	case false:
+		handler = emulate(mc, bucket, redirectURL)
+	}
+	serviceMux.Handle("/", http.TimeoutHandler(handler, 30*time.Second, ""))
 	adminMux := http.NewServeMux()
 	adminMux.Handle("/healthz", http.TimeoutHandler(newHealth(mc, bucket), 9*time.Second, ""))
 	adminMux.Handle("/metrics", promhttp.Handler())
