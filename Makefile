@@ -19,4 +19,5 @@ start: ##@development Start the server (port:8080, admin port:8081).
 
 .PHONY: test
 test: ##@qa Run checks.
+	go test ./...
 	bats tests

@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -11,9 +10,7 @@ import (
 
 type presignStorage interface {
 	exists(ctx context.Context, objectName string) (bool, error)
-	get(objectName string) (*url.URL, error)
-	head(objectName string) (*url.URL, error)
-	put(objectName string) (*url.URL, error)
+	presign(method string, objectName string) (*url.URL, error)
 }
 
 func NewPresignHandler(storage presignStorage, redirectURL string) http.HandlerFunc {
@@ -34,7 +31,7 @@ func NewPresignHandler(storage presignStorage, redirectURL string) http.HandlerF
 			}
 		}
 
-		url, err := presignRequest(storage, r.Method, objectName)
+		url, err := storage.presign(r.Method, objectName)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Printf("presigning request: %v", err)
@@ -44,16 +41,4 @@ func NewPresignHandler(storage presignStorage, redirectURL string) http.HandlerF
 		log.Printf("redirect to; %v", url.String())
 		http.Redirect(w, r, url.String(), http.StatusTemporaryRedirect)
 	}
-}
-
-func presignRequest(storage presignStorage, method, objectName string) (*url.URL, error) {
-	switch method {
-	case http.MethodGet:
-		return storage.get(objectName)
-	case http.MethodHead:
-		return storage.head(objectName)
-	case http.MethodPut:
-		return storage.put(objectName)
-	}
-	return nil, fmt.Errorf("method %v not known", method)
 }

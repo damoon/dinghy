@@ -10,12 +10,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-type server struct {
+type Server struct {
 	publicServer *http.Server
 	adminServer  *http.Server
 }
 
-func NewServer(publicAddr, adminAddr string, publicHandler, healthHandler http.Handler) server {
+func NewServer(publicAddr, adminAddr string, publicHandler, healthHandler http.Handler) Server {
 	serviceMux := http.NewServeMux()
 	serviceMux.Handle("/", http.TimeoutHandler(publicHandler, 30*time.Second, ""))
 	adminMux := http.NewServeMux()
@@ -35,13 +35,13 @@ func NewServer(publicAddr, adminAddr string, publicHandler, healthHandler http.H
 		WriteTimeout: 5 * time.Second,
 	}
 
-	return server{
+	return Server{
 		publicServer: publicServer,
 		adminServer:  adminServer,
 	}
 }
 
-func (s server) Run(shutdown <-chan os.Signal) {
+func (s Server) Run(shutdown <-chan os.Signal) {
 	go func() {
 		err := s.publicServer.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {

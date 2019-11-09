@@ -1,0 +1,3 @@
+issues:
+  exclude:
+     - Using the variable on range scope `tt` in function literal
