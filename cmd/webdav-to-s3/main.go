@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	server "webdav-to-s3/pkg"
@@ -51,37 +53,18 @@ func main() {
 	}
 	minioClient.SetCustomTransport(transport)
 
-	go ensureBucket(minioClient, *bucket, *location)
+	storage := server.NewMinioStorage(minioClient, *bucket, *location)
+	go storage.EnsureBucket()
 
-	server.RunServer(minioClient, *bucket, *adminAddr, *serviceAddr, *redirectURL, *lightWeight)
-}
-
-func ensureBucket(mc *minio.Client, bucket, location string) {
-	for {
-		err := createBucketIfMissing(mc, bucket, location)
-		if err != nil {
-			log.Printf("failed to ensure bucket exists: %v\n", err)
-			time.Sleep(5 * time.Second)
-			continue
-		}
-		return
-	}
-}
-
-func createBucketIfMissing(mc *minio.Client, bucket, location string) error {
-	exists, err := mc.BucketExists(bucket)
-	if err != nil {
-		return fmt.Errorf("failed to access bucket %s: %s", bucket, err)
-	}
-	if exists {
-		return nil
+	healthHandler := server.HealthHandler(storage)
+	serviceHandler := server.NewPresignHandler(storage, *redirectURL)
+	if !*lightWeight {
+		serviceHandler = server.NewForwardHandler(storage)
 	}
 
-	err = mc.MakeBucket(bucket, location)
-	if err != nil {
-		return fmt.Errorf("failed to create bucket %s: %s", bucket, err)
-	}
-	log.Printf("bucket %s created\n", bucket)
-
-	return nil
+	// run server until exit signal
+	stop := make(chan os.Signal, 2)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	s := server.NewServer(*serviceAddr, *adminAddr, serviceHandler, healthHandler)
+	s.Run(stop)
 }

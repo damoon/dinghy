@@ -5,30 +5,25 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
-	"github.com/minio/minio-go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func RunServer(mc *minio.Client, bucket, adminAddr, serviceAddr, redirectURL string, minimalizm bool) {
+type server struct {
+	publicServer *http.Server
+	adminServer  *http.Server
+}
+
+func NewServer(publicAddr, adminAddr string, publicHandler, healthHandler http.Handler) server {
 	serviceMux := http.NewServeMux()
-	var handler http.HandlerFunc
-	switch minimalizm {
-	case true:
-		handler = presign(mc, bucket, redirectURL)
-	case false:
-		handler = emulate(mc, bucket, redirectURL)
-	}
-	serviceMux.Handle("/", http.TimeoutHandler(handler, 30*time.Second, ""))
+	serviceMux.Handle("/", http.TimeoutHandler(publicHandler, 30*time.Second, ""))
 	adminMux := http.NewServeMux()
-	adminMux.Handle("/healthz", http.TimeoutHandler(newHealth(mc, bucket), 9*time.Second, ""))
+	adminMux.Handle("/healthz", healthHandler)
 	adminMux.Handle("/metrics", promhttp.Handler())
 
-	serviceServer := &http.Server{
-		Addr:         serviceAddr,
+	publicServer := &http.Server{
+		Addr:         publicAddr,
 		Handler:      serviceMux,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
@@ -40,29 +35,32 @@ func RunServer(mc *minio.Client, bucket, adminAddr, serviceAddr, redirectURL str
 		WriteTimeout: 5 * time.Second,
 	}
 
+	return server{
+		publicServer: publicServer,
+		adminServer:  adminServer,
+	}
+}
+
+func (s server) Run(shutdown <-chan os.Signal) {
 	go func() {
-		err := serviceServer.ListenAndServe()
+		err := s.publicServer.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
 			log.Fatal(err)
 		}
 	}()
 	go func() {
-		err := adminServer.ListenAndServe()
+		err := s.adminServer.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
 			log.Fatal(err)
 		}
 	}()
 
-	// wait for an exit signal
-	stop := make(chan os.Signal, 2)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-
-	<-stop
-	err := serviceServer.Shutdown(context.Background())
+	<-shutdown
+	err := s.publicServer.Shutdown(context.Background())
 	if err != nil {
 		log.Fatalf("server shutdown failed: %s\n", err)
 	}
-	err = adminServer.Shutdown(context.Background())
+	err = s.adminServer.Shutdown(context.Background())
 	if err != nil {
 		log.Fatalf("server shutdown failed: %s\n", err)
 	}
