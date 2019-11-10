@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -38,13 +39,13 @@ func TestNewPresignHandler(t *testing.T) {
 		args args
 		want want
 	}
-	testcase := func(url string) test {
+	redirectTestcase := func(n, u string) test {
 		return test{
-			name: "redirect root",
+			name: n,
 			args: args{
 				storage:     storageMock{},
 				redirectURL: "http://mockminio:9000/",
-				req:         httptest.NewRequest("GET", url, nil),
+				req:         httptest.NewRequest("GET", u, nil),
 			},
 			want: want{
 				httpStatus: http.StatusTemporaryRedirect,
@@ -52,15 +53,60 @@ func TestNewPresignHandler(t *testing.T) {
 			},
 		}
 	}
-	tests := []test{
-		testcase("/"),
-		testcase("/file"),
-		testcase("/some/missing/path"),
-		testcase("/directory"),
+	downloadTestcase := func(n, u string) test {
+		ur, err := url.Parse(fmt.Sprintf("%s%s", "http://mockminio:9000/", u))
+		if err != nil {
+			panic(err)
+		}
+		return test{
+			name: n,
+			args: args{
+				storage: storageMock{
+					existsValue:  true,
+					presignValue: ur,
+				},
+				req: httptest.NewRequest("GET", u, nil),
+			},
+			want: want{
+				httpStatus: http.StatusTemporaryRedirect,
+				targetURL:  ur.String(),
+			},
+		}
 	}
+	uploadTestcase := func(n, u string) test {
+		ur, err := url.Parse(fmt.Sprintf("%s%s", "http://mockminio:9000/", u))
+		if err != nil {
+			panic(err)
+		}
+		return test{
+			name: n,
+			args: args{
+				storage: storageMock{presignValue: ur},
+				req:     httptest.NewRequest("PUT", u, nil),
+			},
+			want: want{
+				httpStatus: http.StatusTemporaryRedirect,
+				targetURL:  ur.String(),
+			},
+		}
+	}
+	tests := []test{
+		redirectTestcase("download missing root", "/"),
+		redirectTestcase("download missing file", "/file"),
+		redirectTestcase("download missing path", "/some/missing/path"),
+		redirectTestcase("download missing directory", "/directory/"),
+		downloadTestcase("download existing root", "/"),
+		downloadTestcase("download existing file", "/file"),
+		downloadTestcase("download existing path", "/some/missing/path"),
+		downloadTestcase("download existing directory", "/directory/"),
+		uploadTestcase("upload root", "/"),
+		uploadTestcase("upload file", "/file"),
+		uploadTestcase("upload path", "/some/missing/path"),
+		uploadTestcase("upload directory", "/directory/"),
+	}
+	t.Parallel()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			h := NewPresignHandler(tt.args.storage, tt.args.redirectURL)
 			w := httptest.NewRecorder()
 			h(w, tt.args.req)

@@ -44,9 +44,9 @@ func TestHealthHandler(t *testing.T) {
 			want: http.StatusServiceUnavailable,
 		},
 	}
+	t.Parallel()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			h := HealthHandler(tt.args.h)
 			w := httptest.NewRecorder()
 			h(w, tt.args.req)
