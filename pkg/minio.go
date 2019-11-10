@@ -11,30 +11,19 @@ import (
 	"github.com/minio/minio-go"
 )
 
-type bucket string
-type location string
-
 type MinioStorage struct {
-	client *minio.Client
-	b      bucket
-	l      location
+	client   *minio.Client
+	bucket   string
+	location string
 }
 
 func NewMinioStorage(c *minio.Client, b, l string) MinioStorage {
 	s := MinioStorage{
-		client: c,
-		b:      bucket(b),
-		l:      location(l),
+		client:   c,
+		bucket:   b,
+		location: l,
 	}
 	return s
-}
-
-func (m MinioStorage) bucket() string {
-	return string(m.b)
-}
-
-func (m MinioStorage) location() string {
-	return string(m.l)
 }
 
 func (m MinioStorage) EnsureBucket() {
@@ -50,19 +39,19 @@ func (m MinioStorage) EnsureBucket() {
 }
 
 func (m MinioStorage) createBucketIfMissing() error {
-	exists, err := m.client.BucketExists(m.bucket())
+	exists, err := m.client.BucketExists(m.bucket)
 	if err != nil {
-		return fmt.Errorf("failed to access bucket %s: %s", m.bucket(), err)
+		return fmt.Errorf("failed to access bucket %s: %s", m.bucket, err)
 	}
 	if exists {
 		return nil
 	}
 
-	err = m.client.MakeBucket(m.bucket(), m.location())
+	err = m.client.MakeBucket(m.bucket, m.location)
 	if err != nil {
-		return fmt.Errorf("failed to create bucket %s: %s", m.bucket(), err)
+		return fmt.Errorf("failed to create bucket %s: %s", m.bucket, err)
 	}
-	log.Printf("bucket %s created\n", m.bucket())
+	log.Printf("bucket %s created\n", m.bucket)
 
 	return nil
 }
@@ -87,7 +76,7 @@ func (m MinioStorage) bucketExists(ctx context.Context) (bool, error) {
 	res := make(chan exists)
 
 	go func() {
-		found, err := m.client.BucketExists(m.bucket())
+		found, err := m.client.BucketExists(m.bucket)
 		res <- exists{found: found, err: err}
 	}()
 
@@ -107,7 +96,7 @@ func (m MinioStorage) exists(ctx context.Context, objectName string) (bool, erro
 	res := make(chan exists)
 
 	go func() {
-		_, err := m.client.StatObject(m.bucket(), objectName, minio.StatObjectOptions{})
+		_, err := m.client.StatObject(m.bucket, objectName, minio.StatObjectOptions{})
 		if err != nil {
 			errResponse := minio.ToErrorResponse(err)
 			if errResponse.Code == "NoSuchKey" {
@@ -129,11 +118,11 @@ func (m MinioStorage) exists(ctx context.Context, objectName string) (bool, erro
 func (m MinioStorage) presign(method, objectName string) (*url.URL, error) {
 	switch method {
 	case http.MethodGet:
-		return m.client.PresignedGetObject(m.bucket(), objectName, 10*time.Minute, url.Values{})
+		return m.client.PresignedGetObject(m.bucket, objectName, 10*time.Minute, url.Values{})
 	case http.MethodHead:
-		return m.client.PresignedHeadObject(m.bucket(), objectName, 10*time.Minute, url.Values{})
+		return m.client.PresignedHeadObject(m.bucket, objectName, 10*time.Minute, url.Values{})
 	case http.MethodPut:
-		return m.client.PresignedPutObject(m.bucket(), objectName, 10*time.Minute)
+		return m.client.PresignedPutObject(m.bucket, objectName, 10*time.Minute)
 	}
 	return nil, fmt.Errorf("method %v not known", method)
 }
