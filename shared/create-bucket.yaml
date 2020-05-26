@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-s3-bucket
+spec:
+  backoffLimit: 20
+  template:
+    metadata:
+      name: create-s3-bucket
+    spec:
+      containers:
+        - name: mc
+          image: minio/mc:RELEASE.2020-05-16T01-44-37Z
+          command:
+            - sh
+            - -c
+            - |
+              set -euxo pipefail
+              mc config host add minio http://minio:9000 minio minio123
+              mc mb minio/http-to-s3 --ignore-existing
+          resources:
+            limits:
+              cpu: 20m
+              memory: 50Mi
+            requests:
+              cpu: 20m
+              memory: 50Mi
+      restartPolicy: OnFailure

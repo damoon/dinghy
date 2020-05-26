@@ -1,6 +1,4 @@
 
-include ./etc/help.mk
-
 lint: ##@qa run linting for golang.
 	golangci-lint run --enable-all ./...
 

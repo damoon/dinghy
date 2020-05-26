@@ -1,6 +1,6 @@
-module webdav-to-s3
+module http-to-s3
 
-go 1.13
+go 1.14
 
 require (
 	github.com/go-ini/ini v1.49.0 // indirect

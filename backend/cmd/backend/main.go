@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	server "webdav-to-s3/pkg"
+	server "http-to-s3/pkg"
 
 	"github.com/minio/minio-go"
 )
@@ -18,11 +18,11 @@ import (
 func main() {
 	serviceAddr := flag.String("service-address", ":8080", "service server address, ':8080'")
 	adminAddr := flag.String("admin-address", ":8081", "admin server address, ':8081'")
-	endpoint := flag.String("endpoint", "http://127.0.0.1:9000", "s3 endpoint")
-	accessKeyID := flag.String("accessKeyID", "", "s3 accessKeyID")
-	secretAccessKey := flag.String("secretAccessKey", "", "s3 secretAccessKey")
-	useSSL := flag.Bool("useSSL", true, "s3 uses https")
-	bucket := flag.String("bucket", "webdav", "s3 bucket name")
+	endpoint := flag.String("endpoint", "minio:9000", "s3 endpoint")
+	accessKeyID := flag.String("accessKeyID", "minio", "s3 accessKeyID")
+	secretAccessKey := flag.String("secretAccessKey", "minio123", "s3 secretAccessKey")
+	useSSL := flag.Bool("useSSL", false, "s3 uses https")
+	bucket := flag.String("bucket", "http-to-s3", "s3 bucket name")
 	location := flag.String("location", "us-east-1", "s3 bucket location")
 	redirectURL := flag.String("redirectURL", "http://127.0.0.1:9000", "url to redirect to instead of 404 (minio)")
 	lightWeight := flag.Bool("light", true, "only support GET and PUT via redirects")
@@ -49,7 +49,7 @@ func main() {
 
 	minioClient, err := minio.New(*endpoint, *accessKeyID, *secretAccessKey, *useSSL)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalf("set up minio client: %v", err)
 	}
 	minioClient.SetCustomTransport(transport)
 
