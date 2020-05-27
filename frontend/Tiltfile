@@ -1,0 +1,15 @@
+
+k8s_yaml('deployment/kubernetes.yaml')
+
+k8s_resource('frontend', port_forwards=['8000'])
+
+docker_build(
+  'frontend-image',
+  '.',
+  dockerfile='deployment/Dockerfile',
+#  target='workbench',
+  live_update=[
+    sync('.', '/app'),
+#    run('cd /app && go build ./cmd/backend'),
+  ],
+)
