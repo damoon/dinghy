@@ -1,0 +1,17 @@
+stages:
+  - test
+
+variables:
+  TILT_NAMESPACE: ci-${CI_PROJECT_PATH_SLUG}-${CI_PIPELINE_ID}
+  DOCKER_HOST: ${DOCKER_HOST_DIND}
+
+deploy:
+  stage: test
+  image: tiltdev/tilt:v0.14.0
+  before_script:
+    - tilt ci
+  script:
+    - "true"
+  after_script:
+    - tilt down
+    - kubectl delete ns ${TILT_NAMESPACE}
