@@ -7,9 +7,8 @@ docker_build(
   'frontend-image',
   '.',
   dockerfile='deployment/Dockerfile',
-#  target='workbench',
   live_update=[
     sync('.', '/app'),
-#    run('cd /app && go build ./cmd/backend'),
+    run('touch /app/src/Main.elm'),
   ],
 )
