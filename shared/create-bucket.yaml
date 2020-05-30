@@ -17,7 +17,7 @@ spec:
             - |
               set -euxo pipefail
               mc config host add minio http://minio:9000 minio minio123
-              mc mb minio/http-to-s3 --ignore-existing
+              mc mb minio/dinghy --ignore-existing
           resources:
             limits:
               cpu: 20m

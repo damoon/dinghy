@@ -1,4 +1,4 @@
-module http-to-s3
+module dinghy
 
 go 1.14
 

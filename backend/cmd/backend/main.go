@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	server "http-to-s3/pkg"
+	server "dinghy/pkg"
 
 	"github.com/minio/minio-go"
 )
@@ -22,7 +22,7 @@ func main() {
 	accessKeyID := flag.String("accessKeyID", "minio", "s3 accessKeyID")
 	secretAccessKey := flag.String("secretAccessKey", "minio123", "s3 secretAccessKey")
 	useSSL := flag.Bool("useSSL", false, "s3 uses https")
-	bucket := flag.String("bucket", "http-to-s3", "s3 bucket name")
+	bucket := flag.String("bucket", "dinghy", "s3 bucket name")
 	location := flag.String("location", "us-east-1", "s3 bucket location")
 	redirectURL := flag.String("redirectURL", "http://127.0.0.1:9000", "url to redirect to instead of 404 (minio)")
 	lightWeight := flag.Bool("light", true, "only support GET and PUT via redirects")
