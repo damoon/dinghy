@@ -10,9 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	server "dinghy/pkg"
-
-	"github.com/minio/minio-go"
+	minio "github.com/minio/minio-go"
+	dinghy "gitlab.com/davedamoon/dinghy/backend/pkg"
 )
 
 func main() {
@@ -53,18 +52,18 @@ func main() {
 	}
 	minioClient.SetCustomTransport(transport)
 
-	storage := server.NewMinioStorage(minioClient, *bucket, *location)
+	storage := dinghy.NewMinioStorage(minioClient, *bucket, *location)
 	go storage.EnsureBucket()
 
-	healthHandler := server.HealthHandler(storage)
-	serviceHandler := server.NewPresignHandler(storage, *redirectURL)
+	healthHandler := dinghy.HealthHandler(storage)
+	serviceHandler := dinghy.NewPresignHandler(storage, *redirectURL)
 	if !*lightWeight {
-		serviceHandler = server.NewForwardHandler(storage)
+		serviceHandler = dinghy.NewForwardHandler(storage)
 	}
 
 	// run server until exit signal
 	stop := make(chan os.Signal, 2)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-	s := server.NewServer(*serviceAddr, *adminAddr, serviceHandler, healthHandler)
+	s := dinghy.NewServer(*serviceAddr, *adminAddr, serviceHandler, healthHandler)
 	s.Run(stop)
 }
