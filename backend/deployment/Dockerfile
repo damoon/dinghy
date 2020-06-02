@@ -10,7 +10,8 @@ COPY go.mod /app
 COPY go.sum /app
 RUN go mod download
 
-COPY . /app
+COPY cmd /app/cmd
+COPY pkg /app/pkg
 RUN go build ./cmd/backend
 
 CMD find /app/backend /app/web | entr -r -d /app/backend

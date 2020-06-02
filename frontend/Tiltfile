@@ -8,7 +8,11 @@ docker_build(
   '.',
   dockerfile='deployment/Dockerfile',
   live_update=[
-    sync('.', '/app'),
+    sync('elm.json', '/app/elm.json'),
+    sync('dist', '/app/dist'),
+    sync('src', '/app/src'),
     run('touch /app/src/Main.elm'),
+    run('elm install', trigger='elm.json'),
   ],
+  ignore=['elm-stuff'],
 )

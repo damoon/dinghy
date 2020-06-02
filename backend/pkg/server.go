@@ -17,7 +17,8 @@ type Server struct {
 
 func NewServer(publicAddr, adminAddr string, publicHandler, healthHandler http.Handler) Server {
 	serviceMux := http.NewServeMux()
-	serviceMux.Handle("/", http.TimeoutHandler(publicHandler, 30*time.Second, ""))
+	//	serviceMux.Handle("/", http.TimeoutHandler(publicHandler, 30*time.Second, ""))
+	serviceMux.HandleFunc("/", ListHandler)
 	adminMux := http.NewServeMux()
 	adminMux.Handle("/healthz", healthHandler)
 	adminMux.Handle("/metrics", promhttp.Handler())

@@ -1,13 +1,12 @@
-FROM node:14.3.0-alpine3.11
+FROM ymtszw/elm_for_ci:0.19.1
 
-RUN apk add bash git
-RUN yarn global add elm elm-test elm-analyse elm-live
+RUN yarn global add elm-live
 
 WORKDIR /app
 
 COPY . /app
 
-CMD elm-live src/Main.elm -w=true --dir=./dist --pushstate -- --output=./dist/main.js
+CMD elm-live src/Main.elm --dir=./dist --pushstate -- --output=./dist/main.js
 
 # https://github.com/rtfeldman/elm-spa-example
 # $ elm make src/Main.elm --output elm.js --optimize
