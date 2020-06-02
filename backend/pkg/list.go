@@ -82,7 +82,7 @@ func ListHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/ui/"+r.URL.Path, http.StatusTemporaryRedirect)
 	}
 
-	switch rand.Intn(3) {
+	switch rand.Intn(1) {
 	case 0:
 		return
 	case 1:
