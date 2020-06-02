@@ -112,11 +112,14 @@ update msg model =
           , Nav.load href )
 
     UrlChanged url ->
-      ( { model | url = url, fetching = Loading }
-      , Cmd.batch [ getRandomCatGif model.url.path
-                  , delay 500 (LoadingIsSlow model.url.path)
-                  ]
-      )
+      if url.path == model.url.path then
+        ( model, Cmd.none )
+      else
+        ( { model | url = url, fetching = Loading }
+        , Cmd.batch [ getRandomCatGif url.path
+                    , delay 500 (LoadingIsSlow url.path)
+                    ]
+        )
 
 errorToString : Http.Error -> String
 errorToString err =
@@ -155,8 +158,6 @@ view model =
               [ img [ src "/favicon.png" ] []
               , text "Dinghy"
               ]
-          , h2 [] [ text model.url.path ]
-          , br [] []
           , viewFetching model.fetching
           , viewDirectory model.dir
           ]
@@ -192,7 +193,10 @@ viewDirectory dira =
     Just dir ->
       div [ ]
       (concat
-        [ List.map viewFolder dir.directories
+        [ [ h2 [] [ text dir.path ]
+          , br [] []
+          ]
+        , List.map viewFolder dir.directories
         , List.map viewFile dir.files
         ])
 
