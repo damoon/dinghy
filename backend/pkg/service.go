@@ -23,7 +23,10 @@ type File struct {
 	Icon string
 }
 
-func ListHandler(w http.ResponseWriter, r *http.Request) {
+type svc struct {
+}
+
+func (s *svc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	setupCORS(&w, r)
 	if (*r).Method == "OPTIONS" {
 		return
