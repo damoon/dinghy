@@ -17,7 +17,7 @@ type MinioStorage struct {
 	location string
 }
 
-func NewMinioStorage(c *minio.Client, b, l string) MinioStorage {
+func NewMinioStorage(c *minio.Client, l, b string) MinioStorage {
 	s := MinioStorage{
 		client:   c,
 		bucket:   b,

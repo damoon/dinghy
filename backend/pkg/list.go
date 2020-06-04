@@ -5,10 +5,8 @@ import (
 	"html/template"
 	"io"
 	"log"
-	"math/rand"
 	"net/http"
 	"strings"
-	"time"
 )
 
 type Directory struct {
@@ -69,30 +67,29 @@ func (s *svc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	addIcons(l.Files)
 
+	respond(w, r, l)
+}
+
+func respond(w http.ResponseWriter, r *http.Request, l Directory) {
 	if requestsJSON(r.Header.Get("Accept")) {
 		err := l.toJSON(w)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Println(err)
 		}
-	} else if isCLIClient(r.UserAgent()) {
+		return
+	}
+
+	if isCLIClient(r.UserAgent()) {
 		err := l.toTXT(w)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Println(err)
 		}
-	} else {
-		http.Redirect(w, r, "/ui/"+r.URL.Path, http.StatusTemporaryRedirect)
+		return
 	}
 
-	switch rand.Intn(1) {
-	case 0:
-		return
-	case 1:
-		time.Sleep(2 * time.Second)
-	case 2:
-		time.Sleep(6 * time.Second)
-	}
+	http.Redirect(w, r, "/ui/"+r.URL.Path, http.StatusTemporaryRedirect)
 }
 
 func setupCORS(w *http.ResponseWriter, req *http.Request) {

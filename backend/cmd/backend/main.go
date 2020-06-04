@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -22,8 +23,8 @@ func main() {
 		Name:  "boom",
 		Usage: "make an explosive entrance",
 		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "user-service", Value: ":8080", Usage: "Address for user service."},
-			&cli.StringFlag{Name: "admin-service", Value: ":9090", Usage: "Address for administration service."},
+			&cli.StringFlag{Name: "service-addr", Value: ":8080", Usage: "Address for user service."},
+			&cli.StringFlag{Name: "admin-addr", Value: ":9090", Usage: "Address for administration service."},
 			&cli.StringFlag{Name: "s3-endpoint", Required: true, Usage: "s3 endpoint."},
 			&cli.StringFlag{Name: "s3-access-key", Required: true, Usage: "s3 access key."},
 			&cli.StringFlag{Name: "s3-secret-access-key-file", Required: true, Usage: "Path to s3 secret access key."},
@@ -57,15 +58,33 @@ func run(c *cli.Context) error {
 	storage := dinghy.NewMinioStorage(s3Clnt, c.String("s3-location"), c.String("s3-bucket"))
 	go storage.EnsureBucket()
 
-	healthHandler := dinghy.HealthHandler(storage)
-	serviceHandler := dinghy.NewPresignHandler(storage, c.String("frontend-url"))
-	serviceHandler = dinghy.NewForwardHandler(storage)
+	adm := dinghy.NewAdminServer()
+	adm.Storage = storage
+	admServer := httpServer(adm, c.String("admin-addr"))
 
-	// run server until exit signal
-	stop := make(chan os.Signal, 2)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-	s := dinghy.NewServer(c.String("user-service"), c.String("admin-service"), serviceHandler, healthHandler)
-	s.Run(stop)
+	svc := dinghy.NewServiceServer()
+	svcServer := httpServer(svc, c.String("service-addr"))
+
+	log.Println("start admin server")
+	go mustListenAndServe(admServer)
+
+	log.Println("start service server")
+	go mustListenAndServe(svcServer)
+
+	awaitShutdown()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	err = shutdown(ctx, svcServer)
+	if err != nil {
+		return fmt.Errorf("shutdown service server: %v", err)
+	}
+
+	err = shutdown(ctx, admServer)
+	if err != nil {
+		return fmt.Errorf("shutdown admin server: %v", err)
+	}
 
 	return nil
 }
@@ -82,6 +101,8 @@ func setupMinio(endpoint, accessKey, secretPath string, useSSL bool, region, buc
 	if err != nil {
 		return nil, err
 	}
+
+	//	http.DefaultTransport.ResponseHeaderTimeout = 10 * time.Second
 
 	clnt.SetCustomTransport(&http.Transport{
 		Dial: (&net.Dialer{
@@ -100,4 +121,40 @@ func setupMinio(endpoint, accessKey, secretPath string, useSSL bool, region, buc
 	}
 
 	return clnt, nil
+}
+
+func httpServer(h http.Handler, addr string) *http.Server {
+	httpServer := &http.Server{
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+	httpServer.Addr = addr
+	httpServer.Handler = h
+
+	return httpServer
+}
+
+func mustListenAndServe(srv *http.Server) {
+	err := srv.ListenAndServe()
+	if err != nil && err != http.ErrServerClosed {
+		log.Fatal(err)
+	}
+}
+
+func awaitShutdown() {
+	stop := make(chan os.Signal, 2)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	<-stop
+
+	// Give ingress controller time to take terminating pod out of schedule.
+	time.Sleep(5 * time.Second)
+}
+
+func shutdown(ctx context.Context, srv *http.Server) error {
+	err := srv.Shutdown(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

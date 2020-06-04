@@ -19,7 +19,7 @@ func (h healthMock) healthy(ctx context.Context) error {
 
 func TestHealthHandler(t *testing.T) {
 	type args struct {
-		h   healthy
+		err error
 		req *http.Request
 	}
 	tests := []struct {
@@ -30,16 +30,16 @@ func TestHealthHandler(t *testing.T) {
 		{
 			name: "healthy",
 			args: args{
-				h:   healthMock{e: nil},
-				req: httptest.NewRequest("GET", "/health", nil),
+				err: nil,
+				req: httptest.NewRequest("GET", "/healthz", nil),
 			},
 			want: http.StatusOK,
 		},
 		{
 			name: "unhealthy",
 			args: args{
-				h:   healthMock{e: fmt.Errorf("error to fail test")},
-				req: httptest.NewRequest("GET", "/health", nil),
+				err: fmt.Errorf("error to fail test"),
+				req: httptest.NewRequest("GET", "/healthz", nil),
 			},
 			want: http.StatusServiceUnavailable,
 		},
@@ -47,11 +47,15 @@ func TestHealthHandler(t *testing.T) {
 	t.Parallel()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := HealthHandler(tt.args.h)
+			s := NewAdminServer()
+			s.Storage = &healthMock{e: tt.args.err}
+
 			w := httptest.NewRecorder()
-			h(w, tt.args.req)
+			s.handleHealthz()(w, tt.args.req)
+
 			resp := w.Result()
 			defer resp.Body.Close()
+
 			got := resp.StatusCode
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("healthHandler returned http status code %v, want %v", got, tt.want)
