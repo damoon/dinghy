@@ -23,6 +23,8 @@ func NewServer(publicAddr, adminAddr string, publicHandler, healthHandler http.H
 	adminMux.Handle("/healthz", healthHandler)
 	adminMux.Handle("/metrics", promhttp.Handler())
 
+	log.Println(publicAddr)
+	log.Println(adminAddr)
 	publicServer := &http.Server{
 		Addr:         publicAddr,
 		Handler:      serviceMux,
@@ -44,12 +46,15 @@ func NewServer(publicAddr, adminAddr string, publicHandler, healthHandler http.H
 
 func (s Server) Run(shutdown <-chan os.Signal) {
 	go func() {
+		log.Println("start user server")
 		err := s.publicServer.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
 			log.Fatal(err)
 		}
 	}()
+
 	go func() {
+		log.Println("start admin server")
 		err := s.adminServer.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
 			log.Fatal(err)

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -21,8 +22,8 @@ func main() {
 		Name:  "boom",
 		Usage: "make an explosive entrance",
 		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "user-address", Value: ":8080", Usage: "Address for user service."},
-			&cli.StringFlag{Name: "admin-address", Value: ":9090", Usage: "Address for administration service."},
+			&cli.StringFlag{Name: "user-service", Value: ":8080", Usage: "Address for user service."},
+			&cli.StringFlag{Name: "admin-service", Value: ":9090", Usage: "Address for administration service."},
 			&cli.StringFlag{Name: "s3-endpoint", Required: true, Usage: "s3 endpoint."},
 			&cli.StringFlag{Name: "s3-access-key", Required: true, Usage: "s3 access key."},
 			&cli.StringFlag{Name: "s3-secret-access-key-file", Required: true, Usage: "Path to s3 secret access key."},
@@ -70,15 +71,24 @@ func run(c *cli.Context) error {
 }
 
 func setupMinio(endpoint, accessKey, secretPath string, useSSL bool, region, bucket string) (*minio.Client, error) {
-	secretAccessKey, err := ioutil.ReadFile(secretPath)
+	secretKeyBytes, err := ioutil.ReadFile(secretPath)
 	if err != nil {
 		return nil, fmt.Errorf("reading secret access key from %s: %v", secretPath, err)
 	}
 
-	clnt, err := minio.NewWithRegion(endpoint, accessKey, string(secretAccessKey), useSSL, region)
+	secretKey := strings.TrimSpace(string(secretKeyBytes))
+
+	clnt, err := minio.NewWithRegion(endpoint, accessKey, secretKey, useSSL, region)
 	if err != nil {
 		return nil, err
 	}
+
+	clnt.SetCustomTransport(&http.Transport{
+		Dial: (&net.Dialer{
+			Timeout: 5 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: 5 * time.Second,
+	})
 
 	exists, err := clnt.BucketExists(bucket)
 	if err != nil {
@@ -88,13 +98,6 @@ func setupMinio(endpoint, accessKey, secretPath string, useSSL bool, region, buc
 	if !exists {
 		return nil, fmt.Errorf("bucket %s does not exist", bucket)
 	}
-
-	clnt.SetCustomTransport(&http.Transport{
-		Dial: (&net.Dialer{
-			Timeout: 5 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 5 * time.Second,
-	})
 
 	return clnt, nil
 }

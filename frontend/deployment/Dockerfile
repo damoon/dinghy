@@ -6,7 +6,7 @@ WORKDIR /app
 
 COPY . /app
 
-CMD elm-live src/Main.elm --dir=./dist --pushstate -- --output=./dist/main.js
+CMD elm-live src/Main.elm --host 0.0.0.0 --port 8000 --dir=./dist --pushstate -- --output=./dist/main.js
 
 # https://github.com/rtfeldman/elm-spa-example
 # $ elm make src/Main.elm --output elm.js --optimize

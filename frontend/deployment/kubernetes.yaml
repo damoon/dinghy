@@ -18,3 +18,7 @@ spec:
         image: frontend-image
         ports:
           - containerPort: 8000
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000

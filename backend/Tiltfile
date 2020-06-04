@@ -1,7 +1,7 @@
 
 k8s_yaml('deployment/kubernetes.yaml')
 
-k8s_resource('backend', port_forwards=['8080', '8081'])
+k8s_resource('backend', port_forwards=['8080', '9090'])
 
 docker_build(
   'backend-image',
@@ -9,7 +9,10 @@ docker_build(
   dockerfile='deployment/Dockerfile',
   target='workbench',
   live_update=[
-    sync('.', '/app'),
+    sync('pkg', '/app/pkg'),
+    sync('cmd', '/app/cmd'),
+    sync('go.mod', '/app/go.mod'),
+    sync('go.sum', '/app/go.sum'),
     run('cd /app && go build ./cmd/backend'),
   ],
 )

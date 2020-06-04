@@ -50,9 +50,6 @@ spec:
             httpGet:
               path: /minio/health/live
               port: 9000
-          livenessProbe:
-            tcpSocket:
-              port: 9000
           lifecycle:
             preStop:
               exec:
