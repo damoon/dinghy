@@ -13,6 +13,6 @@ docker_build(
     sync('cmd', '/app/cmd'),
     sync('go.mod', '/app/go.mod'),
     sync('go.sum', '/app/go.sum'),
-    run('cd /app && go build ./cmd/backend'),
+    run('cd /app && go install ./cmd/backend'),
   ],
 )

@@ -2,12 +2,17 @@ package dinghy
 
 import (
 	"net/http"
-	"time"
 )
+
+type Storage interface {
+	list(prefix string) (Directory, error)
+}
 
 // ServiceServer executes the users requests.
 type ServiceServer struct {
-	router *http.ServeMux
+	router      *http.ServeMux
+	Storage     Storage
+	FrontendURL string
 }
 
 // NewServiceServer creates a new service server and initiates the routes.
@@ -23,6 +28,5 @@ func (s *ServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *ServiceServer) routes() {
 	s.router = http.NewServeMux()
-	svc := &svc{}
-	s.router.Handle("/", http.TimeoutHandler(svc, 30*time.Second, ""))
+	s.router.HandleFunc("/", s.list)
 }

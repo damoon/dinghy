@@ -126,3 +126,54 @@ func (m MinioStorage) presign(method, objectName string) (*url.URL, error) {
 	}
 	return nil, fmt.Errorf("method %v not known", method)
 }
+
+type Directory struct {
+	Path        string
+	Directories []string
+	Files       []File
+}
+
+type File struct {
+	Name string
+	Size int
+	Icon string
+}
+
+func (m MinioStorage) list(prefix string) (Directory, error) {
+	l := Directory{
+		Path: prefix,
+		Directories: []string{
+			"backups",
+			"pictures",
+		},
+		Files: []File{
+			{Name: "apache.log", Size: 1024},
+			{Name: "background.png", Size: 10240},
+			{Name: "a very long name just to see it still works.png", Size: 10240},
+			{Name: "fdshiofdjsaoifdjfiadsjfoidsajfsaoidjiofdsa.tiff", Size: 10240},
+			{Name: "more.exe", Size: 10240},
+			{Name: "apache.log", Size: 1024},
+			{Name: "background.png", Size: 10240},
+			{Name: "a very long name just to see it still works.zip", Size: 10240},
+			{Name: "fdshiofdjsaoifdjfiadsjfoidsajfsaoidjiofdsa.png", Size: 10240},
+			{Name: "more.exe", Size: 10240},
+			{Name: "apache.log", Size: 1024},
+			{Name: "background.png", Size: 10240},
+			{Name: "a very long name just to see it still works.bmp", Size: 10240},
+			{Name: "fdshiofdjsaoifdjfiadsjfoidsajfsaoidjiofdsa.tar", Size: 10240},
+			{Name: "more.exe", Size: 10240},
+			{Name: "apache.log", Size: 1024},
+			{Name: "background.png", Size: 10240},
+			{Name: "a very long name just to see it still works.jpg", Size: 10240},
+			{Name: "fdshiofdjsaoifdjfiadsjfoidsajfsaoidjiofdsa.png", Size: 10240},
+			{Name: "more.exe", Size: 10240},
+			{Name: "apache.log", Size: 1024},
+			{Name: "background.png", Size: 10240},
+			{Name: "a very long name just to see it still works.jpeg", Size: 10240},
+			{Name: "fdshiofdjsaoifdjfiadsjfoidsajfsaoidjiofdsa.tar.gz", Size: 10240},
+			{Name: "more.exe", Size: 10240},
+		},
+	}
+
+	return l, nil
+}

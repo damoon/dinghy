@@ -12,12 +12,12 @@ RUN go mod download
 
 COPY cmd /app/cmd
 COPY pkg /app/pkg
-RUN go build ./cmd/backend
+RUN go install ./cmd/backend
 
 RUN mkdir /secret
 RUN echo "minio123" > /secret/minio
 
-CMD find /app | entr -r -d /app/backend --s3-endpoint=minio:9000 --s3-access-key=minio --s3-secret-access-key-file=/secret/minio --s3-ssl=false --s3-bucket=dinghy --frontend-url=http://127.0.0.1:8000
+CMD find "/go/bin/backend" | entr -d -r backend --s3-endpoint=minio:9000 --s3-access-key=minio --s3-secret-access-key-file=/secret/minio --s3-ssl=false --s3-bucket=dinghy --frontend-url=http://127.0.0.1:8000
 
 
 # ARTIFACT ####################################################
@@ -25,6 +25,6 @@ FROM alpine AS deploy
 ENV ENVIRONMENT production
 WORKDIR /app
 
-COPY --from=workbench /app/backend /backend
+COPY --from=workbench /go/bin/backend /backend
 
 ENTRYPOINT [ "/backend" ]

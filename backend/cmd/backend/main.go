@@ -43,6 +43,7 @@ func main() {
 }
 
 func run(c *cli.Context) error {
+	log.Println("connect to minio")
 
 	s3Clnt, err := setupMinio(
 		c.String("s3-endpoint"),
@@ -63,13 +64,19 @@ func run(c *cli.Context) error {
 	admServer := httpServer(adm, c.String("admin-addr"))
 
 	svc := dinghy.NewServiceServer()
+	svc.Storage = storage
+	svc.FrontendURL = c.String("frontend-url")
 	svcServer := httpServer(svc, c.String("service-addr"))
 
 	log.Println("start admin server")
+
 	go mustListenAndServe(admServer)
 
 	log.Println("start service server")
+
 	go mustListenAndServe(svcServer)
+
+	log.Println("fully started")
 
 	awaitShutdown()
 
@@ -145,9 +152,6 @@ func awaitShutdown() {
 	stop := make(chan os.Signal, 2)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop
-
-	// Give ingress controller time to take terminating pod out of schedule.
-	time.Sleep(5 * time.Second)
 }
 
 func shutdown(ctx context.Context, srv *http.Server) error {

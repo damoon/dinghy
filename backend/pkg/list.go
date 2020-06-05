@@ -9,68 +9,26 @@ import (
 	"strings"
 )
 
-type Directory struct {
-	Path        string
-	Directories []string
-	Files       []File
-}
-
-type File struct {
-	Name string
-	Size int
-	Icon string
-}
-
-type svc struct {
-}
-
-func (s *svc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	setupCORS(&w, r)
+func (s *ServiceServer) list(w http.ResponseWriter, r *http.Request) {
+	setupCORS(&w, r, s.FrontendURL)
 	if (*r).Method == "OPTIONS" {
 		return
 	}
 
-	l := Directory{
-		Path: r.URL.Path,
-		Directories: []string{
-			"backups",
-			"pictures",
-		},
-		Files: []File{
-			{Name: "apache.log", Size: 1024},
-			{Name: "background.png", Size: 10240},
-			{Name: "a very long name just to see it still works.png", Size: 10240},
-			{Name: "fdshiofdjsaoifdjfiadsjfoidsajfsaoidjiofdsa.tiff", Size: 10240},
-			{Name: "more.exe", Size: 10240},
-			{Name: "apache.log", Size: 1024},
-			{Name: "background.png", Size: 10240},
-			{Name: "a very long name just to see it still works.zip", Size: 10240},
-			{Name: "fdshiofdjsaoifdjfiadsjfoidsajfsaoidjiofdsa.png", Size: 10240},
-			{Name: "more.exe", Size: 10240},
-			{Name: "apache.log", Size: 1024},
-			{Name: "background.png", Size: 10240},
-			{Name: "a very long name just to see it still works.bmp", Size: 10240},
-			{Name: "fdshiofdjsaoifdjfiadsjfoidsajfsaoidjiofdsa.tar", Size: 10240},
-			{Name: "more.exe", Size: 10240},
-			{Name: "apache.log", Size: 1024},
-			{Name: "background.png", Size: 10240},
-			{Name: "a very long name just to see it still works.jpg", Size: 10240},
-			{Name: "fdshiofdjsaoifdjfiadsjfoidsajfsaoidjiofdsa.png", Size: 10240},
-			{Name: "more.exe", Size: 10240},
-			{Name: "apache.log", Size: 1024},
-			{Name: "background.png", Size: 10240},
-			{Name: "a very long name just to see it still works.jpeg", Size: 10240},
-			{Name: "fdshiofdjsaoifdjfiadsjfoidsajfsaoidjiofdsa.tar.gz", Size: 10240},
-			{Name: "more.exe", Size: 10240},
-		},
+	prefix := r.URL.Path
+	l, err := s.Storage.list(prefix)
+	if err != nil {
+		log.Printf("list %s: %v", prefix, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	addIcons(l.Files)
 
-	respond(w, r, l)
+	respond(w, r, l, s.FrontendURL)
 }
 
-func respond(w http.ResponseWriter, r *http.Request, l Directory) {
+func respond(w http.ResponseWriter, r *http.Request, l Directory, frontendURL string) {
 	if requestsJSON(r.Header.Get("Accept")) {
 		err := l.toJSON(w)
 		if err != nil {
@@ -89,11 +47,11 @@ func respond(w http.ResponseWriter, r *http.Request, l Directory) {
 		return
 	}
 
-	http.Redirect(w, r, "/ui/"+r.URL.Path, http.StatusTemporaryRedirect)
+	http.Redirect(w, r, frontendURL+r.URL.Path, http.StatusTemporaryRedirect)
 }
 
-func setupCORS(w *http.ResponseWriter, req *http.Request) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+func setupCORS(w *http.ResponseWriter, req *http.Request, domain string) {
+	(*w).Header().Set("Access-Control-Allow-Origin", domain)
 	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 }
@@ -102,6 +60,8 @@ func requestsJSON(ct string) bool {
 	if strings.Contains(strings.ToLower(ct), "application/json") {
 		return true
 	}
+
+	log.Println("test")
 
 	return false
 }
