@@ -13,7 +13,7 @@ import Task
 import String
 import Time
 
-main : Program () Model Msg
+main : Program String Model Msg
 main =
   Browser.application
     { init = init
@@ -29,6 +29,7 @@ type alias Model =
   , url : Url.Url
   , dir : Maybe Directory
   , fetching : Fetching
+  , backend : String
   }
   
 type Fetching
@@ -38,10 +39,10 @@ type Fetching
   | Failed String
 
 
-init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
-init _ url key =
-  ( Model key url Nothing Loading
-  , Cmd.batch [ getRandomCatGif url.path
+init : String -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
+init backend url key =
+  ( Model key url Nothing Loading backend
+  , Cmd.batch [ getRandomCatGif backend url.path
               , delay 500 (LoadingIsSlow url.path)
               ]
   )
@@ -74,7 +75,7 @@ update msg model =
           ( model, Cmd.none )
         _ ->
           ( { model | fetching = Loading }
-          , Cmd.batch [ getRandomCatGif model.url.path
+          , Cmd.batch [ getRandomCatGif model.backend model.url.path
                       , delay 500 (LoadingIsSlow model.url.path) ] )
 
     LoadingIsSlow path ->
@@ -114,7 +115,7 @@ update msg model =
         ( model, Cmd.none )
       else
         ( { model | url = url, fetching = Loading }
-        , Cmd.batch [ getRandomCatGif url.path
+        , Cmd.batch [ getRandomCatGif model.backend url.path
                     , delay 500 (LoadingIsSlow url.path)
                     ]
         )
@@ -287,11 +288,11 @@ viewFile fi =
 -- HTTP
 
 
-getRandomCatGif : String -> Cmd Msg
-getRandomCatGif path =
+getRandomCatGif : String -> String -> Cmd Msg
+getRandomCatGif backend path =
   Http.request
     { method = "GET"
-    , url = "http://backend:8080" ++ path
+    , url = backend ++ path
     , body = Http.emptyBody
     , headers = [
       Http.header "Accept" "application/json;q=0.9"
