@@ -151,7 +151,7 @@ func (m MinioStorage) list(prefix string) (Directory, error) {
 	}
 
 	l := Directory{
-		Path:        prefix,
+		Path:        strings.TrimSuffix(prefix, "/"),
 		Directories: []string{},
 		Files:       []File{},
 	}

@@ -193,12 +193,50 @@ viewDirectory dira =
     Just dir ->
       div [ ]
       (concat
-        [ [ h2 [] [ text dir.path ]
+        [ [ h2 [] (navigation dir.path)
           , br [] []
           ]
         , List.map viewFolder dir.directories
         , List.map viewFile dir.files
         ])
+
+navigation : String -> List (Html Msg)
+navigation path =
+  let
+    elements = String.split "/" path
+    links = navigationElements "/" elements
+  in
+    concat
+    [ [ a [ href "/" ] [ text "Root" ] ]
+    , links
+    ]
+
+navigationElements : String -> List String -> List (Html Msg)
+navigationElements previous elements =
+  let
+    h = List.head elements
+    url = case h of
+      Nothing ->
+        ""
+      Just name ->
+        previous ++ name ++ "/"
+    t = List.tail elements
+    ls = case t of
+      Nothing ->
+        []
+      Just xs ->
+        navigationElements url xs
+  in
+  case (h, t) of
+    (Nothing, _) ->
+      []
+    (Just txt, _) ->
+      concat
+        [ [ text " / "
+          , a [ href url ] [ text txt ]
+          ]
+        , ls
+        ]
 
 
 viewFolder : String -> Html Msg
