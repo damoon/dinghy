@@ -11,7 +11,7 @@ golangci:
   timeout: 10m
   script:
     - cd backend
-    - golangci-lint run .
+    - golangci-lint run ./...
 
 elm analyse:
   stage: test

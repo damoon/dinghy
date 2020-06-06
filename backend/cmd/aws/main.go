@@ -24,7 +24,12 @@ func main() {
 		DisableSSL:       aws.Bool(true),
 		S3ForcePathStyle: aws.Bool(true),
 	}
-	newSession := session.New(s3Config)
+	newSession, err := session.NewSession(s3Config)
+	if err != nil {
+		// Message from an error.
+		fmt.Println(err.Error())
+		return
+	}
 
 	s3Client := s3.New(newSession)
 
@@ -33,7 +38,7 @@ func main() {
 	}
 
 	// Create a new bucket using the CreateBucket call.
-	_, err := s3Client.CreateBucket(cparams)
+	_, err = s3Client.CreateBucket(cparams)
 	if err != nil {
 		// Message from an error.
 		fmt.Println(err.Error())
