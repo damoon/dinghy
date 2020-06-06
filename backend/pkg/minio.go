@@ -3,9 +3,11 @@ package dinghy
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/minio/minio-go"
@@ -134,46 +136,80 @@ type Directory struct {
 }
 
 type File struct {
-	Name string
-	Size int
-	Icon string
+	Name        string
+	DownloadURL string
+	Size        int64
+	Icon        string
 }
 
 func (m MinioStorage) list(prefix string) (Directory, error) {
+
+	prefix = strings.TrimSuffix(prefix, "/")
+	prefix = prefix + "/"
+	if prefix == "/" {
+		prefix = ""
+	}
+
 	l := Directory{
-		Path: prefix,
-		Directories: []string{
-			"backups",
-			"pictures",
-		},
-		Files: []File{
-			{Name: "apache.log", Size: 1024},
-			{Name: "background.png", Size: 10240},
-			{Name: "a very long name just to see it still works.png", Size: 10240},
-			{Name: "fdshiofdjsaoifdjfiadsjfoidsajfsaoidjiofdsa.tiff", Size: 10240},
-			{Name: "more.exe", Size: 10240},
-			{Name: "apache.log", Size: 1024},
-			{Name: "background.png", Size: 10240},
-			{Name: "a very long name just to see it still works.zip", Size: 10240},
-			{Name: "fdshiofdjsaoifdjfiadsjfoidsajfsaoidjiofdsa.png", Size: 10240},
-			{Name: "more.exe", Size: 10240},
-			{Name: "apache.log", Size: 1024},
-			{Name: "background.png", Size: 10240},
-			{Name: "a very long name just to see it still works.bmp", Size: 10240},
-			{Name: "fdshiofdjsaoifdjfiadsjfoidsajfsaoidjiofdsa.tar", Size: 10240},
-			{Name: "more.exe", Size: 10240},
-			{Name: "apache.log", Size: 1024},
-			{Name: "background.png", Size: 10240},
-			{Name: "a very long name just to see it still works.jpg", Size: 10240},
-			{Name: "fdshiofdjsaoifdjfiadsjfoidsajfsaoidjiofdsa.png", Size: 10240},
-			{Name: "more.exe", Size: 10240},
-			{Name: "apache.log", Size: 1024},
-			{Name: "background.png", Size: 10240},
-			{Name: "a very long name just to see it still works.jpeg", Size: 10240},
-			{Name: "fdshiofdjsaoifdjfiadsjfoidsajfsaoidjiofdsa.tar.gz", Size: 10240},
-			{Name: "more.exe", Size: 10240},
-		},
+		Path:        prefix,
+		Directories: []string{},
+		Files:       []File{},
+	}
+
+	doneCh := make(chan struct{})
+	defer close(doneCh)
+	isRecursive := false
+	objectCh := m.client.ListObjectsV2(m.bucket, prefix, isRecursive, doneCh)
+
+	for object := range objectCh {
+		if object.Err != nil {
+			return Directory{}, object.Err
+		}
+
+		name := strings.TrimPrefix(object.Key, prefix)
+
+		if strings.HasSuffix(name, "/") {
+			l.Directories = append(l.Directories, strings.TrimSuffix(name, "/"))
+			continue
+		}
+
+		l.Files = append(l.Files, File{
+			Name:        name,
+			Size:        object.Size,
+			DownloadURL: "http://dinghy-backend:8080/" + object.Key,
+		})
 	}
 
 	return l, nil
+}
+
+func (m MinioStorage) delete(ctx context.Context, path string) error {
+	err := m.client.RemoveObject(m.bucket, path)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m MinioStorage) upload(ctx context.Context, path string, file io.Reader, size int64) error {
+	_, err := m.client.PutObjectWithContext(ctx, m.bucket, path, file, size, minio.PutObjectOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m MinioStorage) download(ctx context.Context, path string, w io.Writer) error {
+	object, err := m.client.GetObjectWithContext(ctx, m.bucket, path, minio.GetObjectOptions{})
+	if err != nil {
+		return err
+	}
+
+	if _, err = io.Copy(w, object); err != nil {
+		return err
+	}
+
+	return nil
 }

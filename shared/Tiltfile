@@ -3,3 +3,20 @@ k8s_yaml('minio.yaml')
 k8s_yaml('create-bucket.yaml')
 
 k8s_resource('minio', port_forwards=9000)
+
+k8s_resource(
+  'create-s3-bucket',
+#  resource_deps=['minio'],
+)
+
+k8s_yaml('tests/deployment/tests.yaml')
+docker_build(
+  'e2e-tests-image',
+  './tests',
+  dockerfile='./tests/deployment/Dockerfile',
+)
+k8s_resource(
+  'e2e-tests',
+  trigger_mode=TRIGGER_MODE_MANUAL,
+  resource_deps=['backend', 'frontend'],
+)

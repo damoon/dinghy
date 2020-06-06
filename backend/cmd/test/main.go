@@ -18,7 +18,7 @@ func main() {
 		TLSHandshakeTimeout: 5 * time.Second,
 	}
 
-	minioClient, err := minio.New("127.0.0.1:9000", "minio", "minio123", false)
+	minioClient, err := minio.New("minio:9000", "minio", "minio123", false)
 	if err != nil {
 		log.Fatalf("set up minio client: %v", err)
 	}

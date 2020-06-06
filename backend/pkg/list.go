@@ -1,24 +1,93 @@
 package dinghy
 
 import (
+	"context"
 	"encoding/json"
 	"html/template"
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 )
 
-func (s *ServiceServer) list(w http.ResponseWriter, r *http.Request) {
-	setupCORS(&w, r, s.FrontendURL)
-	if (*r).Method == "OPTIONS" {
+func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/")
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	found, err := s.Storage.exists(ctx, path)
+	if err != nil {
+		log.Printf("GET %s: %v", path, err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	prefix := r.URL.Path
-	l, err := s.Storage.list(prefix)
+	if found && path != "" {
+		s.download(w, r)
+		return
+	}
+
+	s.list(w, r)
+}
+
+func (s *ServiceServer) download(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/")
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	err := s.Storage.download(ctx, path, w)
 	if err != nil {
-		log.Printf("list %s: %v", prefix, err)
+		log.Printf("GET %s: %v", path, err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
+func (s *ServiceServer) delete(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/")
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	err := s.Storage.delete(ctx, path)
+	if err != nil {
+		log.Printf("DELETE %s: %v", path, err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
+func (s *ServiceServer) put(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/")
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	file := r.Body
+	defer r.Body.Close()
+
+	contentLength := r.Header.Get("Content-Length")
+	size, err := strconv.ParseInt(contentLength, 10, 64)
+	if err != nil {
+		log.Printf("PUT %s: parse size %s: %v", path, contentLength, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = s.Storage.upload(ctx, path, file, size)
+	if err != nil {
+		log.Printf("PUT %s: %v", path, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *ServiceServer) list(w http.ResponseWriter, r *http.Request) {
+	setupCORS(&w, r, s.FrontendURL)
+
+	path := strings.TrimPrefix(r.URL.Path, "/")
+
+	l, err := s.Storage.list(path)
+	if err != nil {
+		log.Printf("list %s: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -51,6 +120,7 @@ func respond(w http.ResponseWriter, r *http.Request, l Directory, frontendURL st
 }
 
 func setupCORS(w *http.ResponseWriter, req *http.Request, domain string) {
+	// TODO minimize to required methods and headers
 	(*w).Header().Set("Access-Control-Allow-Origin", domain)
 	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")

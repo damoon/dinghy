@@ -6,7 +6,7 @@ import Html exposing (..)
 import Html.Attributes exposing (class, id, style, src, href)
 import Html.Events exposing (..)
 import Http
-import Json.Decode exposing (Decoder, field, string, int, bool, list, decodeString, map, map3, maybe)
+import Json.Decode exposing (Decoder, field, string, int, bool, list, decodeString, map, map3, map4, maybe)
 import Url
 import List exposing (concat)
 import Delay
@@ -208,7 +208,9 @@ viewFolder name =
     [ div 
       [ class "icon-inner" ]
       [ a 
-        [ href name ]
+        [ href (name++"/")
+        , class "folder"
+        ]
         [ span
           [ class "fiv-sqo fiv-icon-folder"
           , style "width" "72px"
@@ -232,7 +234,7 @@ viewFile fi =
     [ div 
       [ class "icon-inner" ]
       [ a 
-        [ href fi.name ]
+        [ href fi.downloadURL ]
         [ span
           [ class iconclass
           , style "width" "72px"
@@ -253,7 +255,7 @@ getRandomCatGif : String -> Cmd Msg
 getRandomCatGif path =
   Http.request
     { method = "GET"
-    , url = "http://127.0.0.1:8080" ++ path
+    , url = "http://dinghy-backend:8080" ++ path
     , body = Http.emptyBody
     , headers = [
       Http.header "Accept" "application/json;q=0.9"
@@ -280,6 +282,7 @@ type alias Directory =
 type alias File =
   { name : String
   , size : Int
+  , downloadURL : String
   , icon : String
 --  , icon : Maybe String
   }
@@ -294,8 +297,9 @@ filesDecoder =
 
 fileDecoder : Decoder File
 fileDecoder =
-  map3 File
+  map4 File
     (field "Name" string)
     (field "Size" int)
+    (field "DownloadURL" string)
     (field "Icon" string)
 --    (maybe (field "Icon" string))
