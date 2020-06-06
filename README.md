@@ -22,7 +22,7 @@ run the tests
 make test
 ```
 
-`echo 127.0.0.1 dinghy-frontend dinghy-backend | sudo tee --append /etc/hosts > /dev/null`
+`echo 127.0.0.1 frontend backend minio | sudo tee --append /etc/hosts > /dev/null`
 
 `kubectl -n container-image-builder port-forward svc/dind 12375:2375`
 

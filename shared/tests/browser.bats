@@ -1,10 +1,10 @@
 
 setup () {
-  curl --silent --fail --max-time 5 -X PUT -T favicon.png http://dinghy-backend:8080/subfolder/favicon.png
+  curl --silent --fail --max-time 5 -X PUT -T favicon.png http://backend:8080/subfolder/favicon.png
 }
 
 teardown () {
-  curl --silent --fail --max-time 5 -X DELETE http://dinghy-backend:8080/subfolder/favicon.png
+  curl --silent --fail --max-time 5 -X DELETE http://backend:8080/subfolder/favicon.png
 
   echo teardown log
   echo "exit code: $status"

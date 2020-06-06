@@ -28,9 +28,9 @@ func main() {
 	defer cancel()
 
 	err := chromedp.Run(ctx,
-		chromedp.Navigate(`http://dinghy-backend:8080`),
-		//		chromedp.Click(`.//*[contains(text(),'subfolder')]`, chromedp.NodeVisible),
-		//		chromedp.WaitVisible(`.//*[contains(text(),'favicon.png')]`),
+		chromedp.Navigate(`http://backend:8080`),
+		chromedp.Click(`.//*[contains(text(),'subfolder')]`, chromedp.NodeVisible),
+		chromedp.WaitVisible(`.//*[contains(text(),'favicon.png')]`),
 	)
 	if err != nil {
 		log.Fatal(err)

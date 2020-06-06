@@ -173,10 +173,16 @@ func (m MinioStorage) list(prefix string) (Directory, error) {
 			continue
 		}
 
+		//		url := "http://backend:8080/" + object.Key
+		url, err := m.client.PresignedGetObject(m.bucket, object.Key, 10*time.Minute, url.Values{})
+		if err != nil {
+			return Directory{}, fmt.Errorf("presign download: %v", err)
+		}
+
 		l.Files = append(l.Files, File{
 			Name:        name,
 			Size:        object.Size,
-			DownloadURL: "http://dinghy-backend:8080/" + object.Key,
+			DownloadURL: url.String(),
 		})
 	}
 

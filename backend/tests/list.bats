@@ -1,6 +1,6 @@
 
 function cleanup {
-  curl --max-time 5 -X DELETE http://backend/favicon.png
+  curl --max-time 5 -X DELETE http://backend:8080/favicon.png
   unlink download.png || true
 }
 
@@ -20,25 +20,25 @@ teardown () {
 }
 
 @test "list" {
-  run curl --fail --max-time 5 -o list http://backend/
+  run curl --fail --max-time 5 -o list http://backend:8080/
   [ "$status" -eq 0 ]
 
   run grep favicon.png list
   [ "$status" -ne 0 ]
 
-  run curl --fail --max-time 5 -X PUT -T favicon.png http://backend/favicon.png
+  run curl --fail --max-time 5 -X PUT -T favicon.png http://backend:8080/favicon.png
   [ "$status" -eq 0 ]
 
-  run curl --fail --max-time 5 -o list http://backend/
+  run curl --fail --max-time 5 -o list http://backend:8080/
   [ "$status" -eq 0 ]
 
   run grep favicon.png list
   [ "$status" -eq 0 ]
 
-  run curl --fail --max-time 5 -X DELETE http://backend/favicon.png
+  run curl --fail --max-time 5 -X DELETE http://backend:8080/favicon.png
   [ "$status" -eq 0 ]
 
-  run curl --fail --max-time 5 -o list http://backend/
+  run curl --fail --max-time 5 -o list http://backend:8080/
   [ "$status" -eq 0 ]
 
   run grep favicon.png list

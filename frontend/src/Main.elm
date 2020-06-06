@@ -293,7 +293,7 @@ getRandomCatGif : String -> Cmd Msg
 getRandomCatGif path =
   Http.request
     { method = "GET"
-    , url = "http://dinghy-backend:8080" ++ path
+    , url = "http://backend:8080" ++ path
     , body = Http.emptyBody
     , headers = [
       Http.header "Accept" "application/json;q=0.9"
