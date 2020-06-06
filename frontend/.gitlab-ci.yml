@@ -1,0 +1,7 @@
+elm analyse:
+  stage: test
+  image: ymtszw/elm_for_ci:0.19.1
+  timeout: 10m
+  script:
+    - cd frontend
+    - elm-analyse .

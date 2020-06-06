@@ -1,25 +1,13 @@
-stages:
+include:
+ - 'backend/.gitlab-ci.yml'
+ - 'backend/.gitlab-ci.yml'
+
+ stages:
   - test
 
 variables:
   TILT_NAMESPACE: ci-${CI_PROJECT_PATH_SLUG}-${CI_PIPELINE_ID}
   DOCKER_HOST: ${DOCKER_HOST_DIND}
-
-golangci:
-  stage: test
-  image: golangci/golangci-lint:v1.27.0-alpine
-  timeout: 10m
-  script:
-    - cd backend
-    - golangci-lint run ./...
-
-elm analyse:
-  stage: test
-  image: ymtszw/elm_for_ci:0.19.1
-  timeout: 10m
-  script:
-    - cd frontend
-    - elm-analyse .
 
 deploy:
   stage: test

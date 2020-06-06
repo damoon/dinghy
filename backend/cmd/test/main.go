@@ -22,6 +22,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("set up minio client: %v", err)
 	}
+
 	minioClient.SetCustomTransport(transport)
 
 	// Create a done channel to control 'ListObjectsV2' go routine.
@@ -32,12 +33,14 @@ func main() {
 
 	isRecursive := true
 	prefix := ""
+
 	objectCh := minioClient.ListObjectsV2("dinghy", prefix, isRecursive, doneCh)
 	for object := range objectCh {
 		if object.Err != nil {
 			fmt.Println(object.Err)
 			return
 		}
+
 		fmt.Println(object)
 	}
 }

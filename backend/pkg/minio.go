@@ -25,6 +25,7 @@ func NewMinioStorage(c *minio.Client, l, b string) MinioStorage {
 		bucket:   b,
 		location: l,
 	}
+
 	return s
 }
 
@@ -34,8 +35,10 @@ func (m MinioStorage) EnsureBucket() {
 		if err != nil {
 			log.Printf("failed to ensure bucket exists: %v\n", err)
 			time.Sleep(5 * time.Second)
+
 			continue
 		}
+
 		return
 	}
 }
@@ -45,6 +48,7 @@ func (m MinioStorage) createBucketIfMissing() error {
 	if err != nil {
 		return fmt.Errorf("failed to access bucket %s: %s", m.bucket, err)
 	}
+
 	if exists {
 		return nil
 	}
@@ -53,6 +57,7 @@ func (m MinioStorage) createBucketIfMissing() error {
 	if err != nil {
 		return fmt.Errorf("failed to create bucket %s: %s", m.bucket, err)
 	}
+
 	log.Printf("bucket %s created\n", m.bucket)
 
 	return nil
@@ -63,9 +68,11 @@ func (m MinioStorage) healthy(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to check for bucket: %s", err)
 	}
+
 	if !found {
 		return fmt.Errorf("bucket is missing: %s", err)
 	}
+
 	return nil
 }
 
@@ -126,6 +133,7 @@ func (m MinioStorage) presign(method, objectName string) (*url.URL, error) {
 	case http.MethodPut:
 		return m.client.PresignedPutObject(m.bucket, objectName, 10*time.Minute)
 	}
+
 	return nil, fmt.Errorf("method %v not known", method)
 }
 
@@ -143,9 +151,9 @@ type File struct {
 }
 
 func (m MinioStorage) list(prefix string) (Directory, error) {
-
 	prefix = strings.TrimSuffix(prefix, "/")
 	prefix = prefix + "/"
+
 	if prefix == "/" {
 		prefix = ""
 	}
@@ -158,6 +166,7 @@ func (m MinioStorage) list(prefix string) (Directory, error) {
 
 	doneCh := make(chan struct{})
 	defer close(doneCh)
+
 	isRecursive := false
 	objectCh := m.client.ListObjectsV2(m.bucket, prefix, isRecursive, doneCh)
 

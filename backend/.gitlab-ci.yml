@@ -1,0 +1,8 @@
+golangci:
+  allow_failure: true
+  stage: test
+  image: golangci/golangci-lint:v1.27.0-alpine
+  timeout: 10m
+  script:
+    - cd backend
+    - golangci-lint run ./...

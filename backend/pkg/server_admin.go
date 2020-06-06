@@ -24,6 +24,7 @@ type AdminServer struct {
 func NewAdminServer() *AdminServer {
 	srv := &AdminServer{}
 	srv.routes()
+
 	return srv
 }
 

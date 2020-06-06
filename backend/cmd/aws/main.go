@@ -25,6 +25,7 @@ func main() {
 		S3ForcePathStyle: aws.Bool(true),
 	}
 	newSession, err := session.NewSession(s3Config)
+
 	if err != nil {
 		// Message from an error.
 		fmt.Println(err.Error())
@@ -55,6 +56,7 @@ func main() {
 		fmt.Printf("Failed to upload data to %s/%s, %s\n", *bucket, *key, err.Error())
 		return
 	}
+
 	fmt.Printf("Successfully created bucket %s and uploaded data with key %s\n", *bucket, *key)
 
 	// Retrieve our "testobject" from our "newbucket" and store it locally in "testobject_local".
@@ -66,6 +68,7 @@ func main() {
 	defer file.Close()
 
 	downloader := s3manager.NewDownloader(newSession)
+
 	numBytes, err := downloader.Download(file,
 		&s3.GetObjectInput{
 			Bucket: bucket,
@@ -75,5 +78,6 @@ func main() {
 		fmt.Println("Failed to download file", err)
 		return
 	}
+
 	fmt.Println("Downloaded file", file.Name(), numBytes, "bytes")
 }

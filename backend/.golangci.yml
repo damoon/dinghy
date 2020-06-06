@@ -1,12 +1,23 @@
+run:
+  timeout: 5m
+
 issues:
   exclude:
      - Using the variable on range scope `tt` in function literal
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gocyclo
-        - errcheck
-        - dupl
-        - gosec
-        - funlen
-        - gochecknoglobals
+     - "`adn` is a misspelling of `and`"
+#  exclude-rules:
+#    - path: _test\.go
+#      linters:
+#        #- gocyclo
+#        #- errcheck
+#        #- dupl
+#        #- gosec
+#        #- funlen
+#        #- gochecknoglobals
+        
+linters:
+  disable:
+    - gomnd
+    - testpackage
+    - goerr113
+    - lll

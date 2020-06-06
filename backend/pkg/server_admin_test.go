@@ -22,6 +22,7 @@ func TestHealthHandler(t *testing.T) {
 		err error
 		req *http.Request
 	}
+
 	tests := []struct {
 		name string
 		args args
@@ -44,7 +45,9 @@ func TestHealthHandler(t *testing.T) {
 			want: http.StatusServiceUnavailable,
 		},
 	}
+
 	t.Parallel()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewAdminServer()

@@ -29,6 +29,7 @@ func NewServiceServer() *ServiceServer {
 
 func (s *ServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s", r.Method, r.URL.Path)
+
 	switch r.Method {
 	case http.MethodOptions:
 		return

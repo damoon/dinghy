@@ -30,15 +30,18 @@ func TestNewPresignHandler(t *testing.T) {
 		redirectURL string
 		req         *http.Request
 	}
+
 	type want struct {
 		httpStatus int
 		targetURL  string
 	}
+
 	type test struct {
 		name string
 		args args
 		want want
 	}
+
 	redirectTestcase := func(n, u string) test {
 		return test{
 			name: n,
@@ -58,6 +61,7 @@ func TestNewPresignHandler(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
+
 		return test{
 			name: n,
 			args: args{
@@ -78,6 +82,7 @@ func TestNewPresignHandler(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
+
 		return test{
 			name: n,
 			args: args{
@@ -104,7 +109,9 @@ func TestNewPresignHandler(t *testing.T) {
 		uploadTestcase("upload path", "/some/missing/path"),
 		uploadTestcase("upload directory", "/directory/"),
 	}
+
 	t.Parallel()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h := NewPresignHandler(tt.args.storage, tt.args.redirectURL)

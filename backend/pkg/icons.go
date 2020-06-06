@@ -11,6 +11,7 @@ func init() {
 func addIcons(ff []File) {
 	for i, f := range ff {
 		ff[i].Icon = "blank"
+
 		for _, ext := range icons {
 			if strings.HasSuffix(f.Name, "."+ext) {
 				ff[i].Icon = ext

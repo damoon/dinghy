@@ -23,10 +23,13 @@ func NewPresignHandler(storage presignStorage, redirectURL string) http.HandlerF
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				log.Printf("looking up file: %v", err)
+
 				return
 			}
+
 			if !found {
 				http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
+
 				return
 			}
 		}
@@ -35,6 +38,7 @@ func NewPresignHandler(storage presignStorage, redirectURL string) http.HandlerF
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Printf("presigning request: %v", err)
+
 			return
 		}
 

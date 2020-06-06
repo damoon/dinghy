@@ -14,6 +14,7 @@ import (
 
 func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/")
+
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 
@@ -21,11 +22,13 @@ func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("GET %s: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
+
 		return
 	}
 
 	if found && path != "" {
 		s.download(w, r)
+
 		return
 	}
 
@@ -34,6 +37,7 @@ func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
 
 func (s *ServiceServer) download(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/")
+
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 
@@ -46,6 +50,7 @@ func (s *ServiceServer) download(w http.ResponseWriter, r *http.Request) {
 
 func (s *ServiceServer) delete(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/")
+
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
@@ -58,6 +63,7 @@ func (s *ServiceServer) delete(w http.ResponseWriter, r *http.Request) {
 
 func (s *ServiceServer) put(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/")
+
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 
@@ -65,10 +71,12 @@ func (s *ServiceServer) put(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	contentLength := r.Header.Get("Content-Length")
+
 	size, err := strconv.ParseInt(contentLength, 10, 64)
 	if err != nil {
 		log.Printf("PUT %s: parse size %s: %v", path, contentLength, err)
 		w.WriteHeader(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -76,6 +84,7 @@ func (s *ServiceServer) put(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("PUT %s: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
+
 		return
 	}
 }
@@ -89,6 +98,7 @@ func (s *ServiceServer) list(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("list %s: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
+
 		return
 	}
 
@@ -104,6 +114,7 @@ func respond(w http.ResponseWriter, r *http.Request, l Directory, frontendURL st
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Println(err)
 		}
+
 		return
 	}
 
@@ -113,6 +124,7 @@ func respond(w http.ResponseWriter, r *http.Request, l Directory, frontendURL st
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Println(err)
 		}
+
 		return
 	}
 
@@ -173,5 +185,4 @@ func (l Directory) toTXT(w io.Writer) error {
 	}
 
 	return nil
-
 }
