@@ -132,10 +132,7 @@ func respond(w http.ResponseWriter, r *http.Request, l Directory, frontendURL st
 }
 
 func setupCORS(w *http.ResponseWriter, req *http.Request, domain string) {
-	// TODO minimize to required methods and headers
 	(*w).Header().Set("Access-Control-Allow-Origin", domain)
-	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 }
 
 func requestsJSON(ct string) bool {
