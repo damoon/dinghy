@@ -8,6 +8,7 @@ variables:
 golangci:
   stage: test
   image: golangci/golangci-lint:v1.27.0-alpine
+  timeout: 10m
   script:
     - cd backend
     - golangci-lint run .
@@ -15,6 +16,7 @@ golangci:
 elm analyse:
   stage: test
   image: ymtszw/elm_for_ci:0.19.1
+  timeout: 10m
   script:
     - cd frontend
     - elm-analyse .
@@ -22,6 +24,7 @@ elm analyse:
 deploy:
   stage: test
   image: tiltdev/tilt:v0.14.0
+  timeout: 10m
   before_script:
     - tilt ci
   script:
