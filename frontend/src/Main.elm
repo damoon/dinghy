@@ -2,14 +2,12 @@ module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
-import Html exposing (..)
+import Html exposing (text, img, h1, div, Html, br, h2, a, span)
 import Html.Attributes exposing (class, id, style, src, href)
-import Html.Events exposing (..)
 import Http
-import Json.Decode exposing (Decoder, field, string, int, bool, list, decodeString, map, map3, map4, maybe)
+import Json.Decode exposing (Decoder, field, string, int, list, map, map3, map4)
 import Url
 import List exposing (concat)
-import Delay
 import Process
 import Task
 import String
@@ -41,7 +39,7 @@ type Fetching
 
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
-init flags url key =
+init _ url key =
   ( Model key url Nothing Loading
   , Cmd.batch [ getRandomCatGif url.path
               , delay 500 (LoadingIsSlow url.path)
@@ -68,7 +66,7 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
 
-    Tick newTime ->
+    Tick _ ->
       case model.fetching of
         Loading ->
           ( model, Cmd.none )
@@ -143,7 +141,7 @@ errorToString err =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions _ =
   Time.every 1000 Tick
 
 
