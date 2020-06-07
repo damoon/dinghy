@@ -1,23 +1,13 @@
 package dinghy
 
 import (
-	"context"
-	"io"
 	"log"
 	"net/http"
 )
 
-type Storage interface {
-	list(prefix string) (Directory, error)
-	upload(ctx context.Context, path string, file io.Reader, size int64) error
-	delete(ctx context.Context, path string) error
-	download(ctx context.Context, path string, w io.Writer) error
-	exists(ctx context.Context, path string) (bool, error)
-}
-
 // ServiceServer executes the users requests.
 type ServiceServer struct {
-	Storage     Storage
+	Storage     ObjectStore
 	FrontendURL string
 }
 

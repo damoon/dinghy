@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+	// enable to show browser window
 	//	opts := append(
 	//		chromedp.DefaultExecAllocatorOptions[:],
 	//		chromedp.Flag("headless", false),

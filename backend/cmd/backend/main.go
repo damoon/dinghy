@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,7 +12,10 @@ import (
 	"syscall"
 	"time"
 
-	minio "github.com/minio/minio-go"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/urfave/cli/v2"
 	dinghy "gitlab.com/davedamoon/dinghy/backend/pkg"
 )
@@ -46,7 +48,7 @@ func main() {
 func run(c *cli.Context) error {
 	log.Println("connect to minio")
 
-	s3Clnt, err := setupMinio(
+	s3Client, err := setupMinio(
 		c.String("s3-endpoint"),
 		c.String("s3-access-key"),
 		c.String("s3-secret-access-key-file"),
@@ -57,8 +59,10 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("setup minio s3 client: %v", err)
 	}
 
-	storage := dinghy.NewMinioStorage(s3Clnt, c.String("s3-location"), c.String("s3-bucket"))
-	go storage.EnsureBucket()
+	storage := dinghy.Storage{
+		Client: s3Client,
+		Bucket: c.String("s3-bucket"),
+	}
 
 	adm := dinghy.NewAdminServer()
 	adm.Storage = storage
@@ -97,7 +101,7 @@ func run(c *cli.Context) error {
 	return nil
 }
 
-func setupMinio(endpoint, accessKey, secretPath string, useSSL bool, region, bucket string) (*minio.Client, error) {
+func setupMinio(endpoint, accessKey, secretPath string, useSSL bool, region, bucket string) (*s3.S3, error) {
 	secretKeyBytes, err := ioutil.ReadFile(secretPath)
 	if err != nil {
 		return nil, fmt.Errorf("reading secret access key from %s: %v", secretPath, err)
@@ -105,30 +109,27 @@ func setupMinio(endpoint, accessKey, secretPath string, useSSL bool, region, buc
 
 	secretKey := strings.TrimSpace(string(secretKeyBytes))
 
-	clnt, err := minio.NewWithRegion(endpoint, accessKey, secretKey, useSSL, region)
+	endpointProtocol := "http"
+	if useSSL {
+		endpointProtocol = "https"
+	}
+
+	s3Config := &aws.Config{
+		Credentials:      credentials.NewStaticCredentials(accessKey, secretKey, ""),
+		Endpoint:         aws.String(fmt.Sprintf("%s://%s", endpointProtocol, endpoint)),
+		Region:           aws.String(region),
+		DisableSSL:       aws.Bool(!useSSL),
+		S3ForcePathStyle: aws.Bool(true),
+	}
+
+	newSession, err := session.NewSession(s3Config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("set up aws session: %v", err)
 	}
 
-	//	http.DefaultTransport.ResponseHeaderTimeout = 10 * time.Second
+	s3Client := s3.New(newSession)
 
-	clnt.SetCustomTransport(&http.Transport{
-		Dial: (&net.Dialer{
-			Timeout: 5 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 5 * time.Second,
-	})
-
-	exists, err := clnt.BucketExists(bucket)
-	if err != nil {
-		return nil, fmt.Errorf("look up bucket %s: %v", bucket, err)
-	}
-
-	if !exists {
-		return nil, fmt.Errorf("bucket %s does not exist", bucket)
-	}
-
-	return clnt, nil
+	return s3Client, nil
 }
 
 func httpServer(h http.Handler, addr string) *http.Server {
