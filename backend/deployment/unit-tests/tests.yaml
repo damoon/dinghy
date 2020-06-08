@@ -1,15 +1,15 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: backend-tests
+  name: backend-unit-tests
 spec:
   backoffLimit: 0
   template:
     metadata:
       labels:
-        app: backend-tests
+        app: backend-unit-tests
     spec:
       containers:
       - name: tests
-        image: tests-image
+        image: unit-tests-image
       restartPolicy: Never

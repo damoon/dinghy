@@ -1,11 +1,12 @@
 
-k8s_yaml('deployment/kubernetes.yaml')
+k8s_yaml('deployment/backend/kubernetes.yaml')
 docker_build(
   'backend-image',
   '.',
-  dockerfile='deployment/Dockerfile',
+  dockerfile='deployment/backend/Dockerfile',
   target='workbench',
-  ignore=['tests', 'deployment/tests'],
+  only=['go.mod', 'go.sum', 'pkg', 'cmd', 'deployment/backend'],
+  ignore=['*/*_test.go'],
   live_update=[
     sync('pkg', '/app/pkg'),
     sync('cmd', '/app/cmd'),
@@ -20,15 +21,24 @@ k8s_resource(
   resource_deps=['create-s3-bucket'],
 )
 
-k8s_yaml('deployment/tests/tests.yaml')
+k8s_yaml('deployment/integration-tests/tests.yaml')
 docker_build(
-  'tests-image',
+  'integration-tests-image',
   '.',
-  dockerfile='deployment/tests/Dockerfile',
-  only=['tests', 'deployment/tests'],
+  dockerfile='deployment/integration-tests/Dockerfile',
+  only=['tests', 'deployment/integration-tests'],
 )
 k8s_resource(
-  'backend-tests',
+  'backend-integration-tests',
   trigger_mode=TRIGGER_MODE_MANUAL,
   resource_deps=['backend'],
+)
+
+
+k8s_yaml('deployment/unit-tests/tests.yaml')
+docker_build(
+  'unit-tests-image',
+  '.',
+  dockerfile='deployment/unit-tests/Dockerfile',
+  only=['go.mod', 'go.sum', 'pkg', 'cmd', 'deployment/backend'],
 )

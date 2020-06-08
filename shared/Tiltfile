@@ -9,11 +9,11 @@ k8s_resource(
   resource_deps=['minio'],
 )
 
-k8s_yaml('tests/deployment/tests.yaml')
+k8s_yaml('e2e-tests/deployment/tests.yaml')
 docker_build(
   'e2e-tests-image',
-  './tests',
-  dockerfile='./tests/deployment/Dockerfile',
+  'e2e-tests',
+  dockerfile='e2e-tests/deployment/Dockerfile',
 )
 k8s_resource(
   'e2e-tests',

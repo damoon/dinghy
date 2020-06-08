@@ -1,6 +1,5 @@
 # WORKBENCH ###################################################
 FROM golang:1.14.1 AS workbench
-ENV ENVIRONMENT development
 WORKDIR /app
 
 RUN apt-get update

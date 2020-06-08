@@ -1,5 +1,4 @@
 FROM golang:1.14.1 AS workbench
-ENV ENVIRONMENT development
 RUN mkdir /tests
 WORKDIR /tests
 
@@ -19,4 +18,4 @@ RUN go build -o /go/bin/main .
 COPY browser.bats /tests
 COPY favicon.png /tests
 
-ENTRYPOINT [ "bats", "." ]
+CMD bats . && echo "done"

@@ -10,28 +10,25 @@ func Test_shouldRedirect(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name:     "default",
-			rawQuery: "",
-			want:     false,
-			wantErr:  false,
+			name: "redirect not set",
 		},
 		{
-			name:     "redirect",
+			name:     "redirect set without value",
 			rawQuery: "redirect",
 			want:     true,
 		},
 		{
-			name:     "redirect=",
+			name:     "redirect set to empty string",
 			rawQuery: "redirect=",
 			want:     true,
 		},
 		{
-			name:     "redirect=1",
+			name:     "redirect set to 1",
 			rawQuery: "redirect=1",
 			want:     true,
 		},
 		{
-			name:     "redirect=0",
+			name:     "redirect set to 0",
 			rawQuery: "redirect=0",
 			want:     true,
 		},
