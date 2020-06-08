@@ -80,18 +80,20 @@ func run(c *cli.Context) error {
 
 	adm := dinghy.NewAdminServer()
 	adm.Storage = storage
-	admHandler := dinghy.Timeout(1*time.Second, adm)
-	admHandler = dinghy.RequestID(rand.Int63, admHandler)
+	admHandler := dinghy.RequestID(rand.Int63, adm)
 	admHandler = dinghy.InitTraceContext(admHandler)
+	//admHandler = dinghy.InstrumentHttpHandler(admHandler) // reduce noise
+	admHandler = dinghy.Timeout(900*time.Millisecond, admHandler)
 	admServer := httpServer(admHandler, c.String("admin-addr"))
 
 	svc := dinghy.NewServiceServer()
 	svc.Storage = storage
 	svc.FrontendURL = c.String("frontend-url")
-	svcHandler := dinghy.Timeout(30*time.Second, svc)
-	svcHandler = dinghy.CORS(c.String("frontend-url"), svcHandler)
+	svcHandler := dinghy.CORS(c.String("frontend-url"), svc)
 	svcHandler = dinghy.RequestID(rand.Int63, svcHandler)
 	svcHandler = dinghy.InitTraceContext(svcHandler)
+	svcHandler = dinghy.InstrumentHttpHandler(svcHandler)
+	svcHandler = dinghy.Timeout(29*time.Second, svcHandler)
 	svcServer := httpServer(svcHandler, c.String("service-addr"))
 
 	log.Println("starting admin server")
