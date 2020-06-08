@@ -196,8 +196,6 @@ func (s *ServiceServer) receiveFile(ctx context.Context, path string, r io.Reade
 func (s *ServiceServer) list(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 
-	setupCORS(&w, r, s.FrontendURL)
-
 	l, err := s.Storage.list(r.Context(), path)
 	if err != nil {
 		log.Printf("list %s: %v", path, err)
@@ -233,10 +231,6 @@ func respond(w http.ResponseWriter, r *http.Request, l Directory, frontendURL st
 	}
 
 	http.Redirect(w, r, frontendURL+r.URL.Path, http.StatusTemporaryRedirect)
-}
-
-func setupCORS(w *http.ResponseWriter, req *http.Request, domain string) {
-	(*w).Header().Set("Access-Control-Allow-Origin", domain)
 }
 
 func requestsJSON(ct string) bool {

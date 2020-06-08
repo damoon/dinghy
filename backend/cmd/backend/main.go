@@ -73,6 +73,7 @@ func run(c *cli.Context) error {
 	svc.Storage = storage
 	svc.FrontendURL = c.String("frontend-url")
 	svcHandler := dinghy.Timeout(30*time.Second, svc)
+	svcHandler = dinghy.CORS(c.String("frontend-url"), svcHandler)
 	svcServer := httpServer(svcHandler, c.String("service-addr"))
 
 	log.Println("starting admin server")
