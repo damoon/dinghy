@@ -20,7 +20,7 @@ type ObjectStore interface {
 	delete(ctx context.Context, path string) error
 	download(ctx context.Context, path string, w io.WriterAt) error
 	exists(ctx context.Context, path string) (bool, error)
-	presign(method, path string) (string, error)
+	presign(ctx context.Context, method, path string) (string, error)
 }
 
 func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
@@ -30,24 +30,31 @@ func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("GET %s: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
-
 		return
 	}
 
 	if found && path != "/" {
-		s.download(w, r)
+		err = s.download(w, r)
+		if err != nil {
+			log.Printf("GET %s: %v", path, err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
 	if strings.HasSuffix(path, "/") {
-		s.list(w, r)
+		err = s.list(w, r)
+		if err != nil {
+			log.Printf("GET %s: %v", path, err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
 	w.WriteHeader(http.StatusNotFound)
 }
 
-func (s *ServiceServer) download(w http.ResponseWriter, r *http.Request) {
+func (s *ServiceServer) download(w http.ResponseWriter, r *http.Request) error {
 	path := r.URL.Path
 
 	redirect, err := shouldRedirect(r.URL.RawQuery)
@@ -56,23 +63,21 @@ func (s *ServiceServer) download(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if redirect {
-		url, err := s.Storage.presign(http.MethodGet, path)
+		url, err := s.Storage.presign(r.Context(), http.MethodGet, path)
 		if err != nil {
-			log.Printf("GET %s: redirect: %v", path, err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			return fmt.Errorf("GET %s: redirect: %v", path, err)
 		}
 
 		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-		return
+		return nil
 	}
 
 	err = s.delieverFile(r.Context(), path, w)
 	if err != nil {
-		log.Printf("GET %s: send object: %v", path, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return fmt.Errorf("GET %s: send object: %v", path, err)
 	}
+
+	return nil
 }
 
 func (s *ServiceServer) delieverFile(ctx context.Context, path string, w io.Writer) error {
@@ -122,7 +127,7 @@ func (s *ServiceServer) delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if redirect {
-		url, err := s.Storage.presign(http.MethodDelete, path)
+		url, err := s.Storage.presign(r.Context(), http.MethodDelete, path)
 		if err != nil {
 			log.Printf("DELETE %s: redirect: %v", path, err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -149,7 +154,7 @@ func (s *ServiceServer) put(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if redirect {
-		url, err := s.Storage.presign(http.MethodPut, path)
+		url, err := s.Storage.presign(r.Context(), http.MethodPut, path)
 		if err != nil {
 			log.Printf("PUT %s: redirect: %v", path, err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -193,44 +198,46 @@ func (s *ServiceServer) receiveFile(ctx context.Context, path string, r io.Reade
 	return nil
 }
 
-func (s *ServiceServer) list(w http.ResponseWriter, r *http.Request) {
+func (s *ServiceServer) list(w http.ResponseWriter, r *http.Request) error {
 	path := r.URL.Path
 
 	l, err := s.Storage.list(r.Context(), path)
 	if err != nil {
-		log.Printf("list %s: %v", path, err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return fmt.Errorf("list %s: %v", path, err)
 	}
 
 	addIcons(l.Files)
 
-	respond(w, r, l, s.FrontendURL)
+	err = respond(w, r, l, s.FrontendURL)
+	if err != nil {
+		return fmt.Errorf("respond: %v", err)
+	}
+
+	return nil
 }
 
-func respond(w http.ResponseWriter, r *http.Request, l Directory, frontendURL string) {
+func respond(w http.ResponseWriter, r *http.Request, l Directory, frontendURL string) error {
 	if requestsJSON(r.Header.Get("Accept")) {
 		err := l.toJSON(w)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			log.Println(err)
+			return fmt.Errorf("render json: %v", err)
 		}
 
-		return
+		return nil
 	}
 
 	if isCLIClient(r.UserAgent()) {
 		err := l.toTXT(w)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			log.Println(err)
+			return fmt.Errorf("render text: %v", err)
 		}
 
-		return
+		return nil
 	}
 
 	http.Redirect(w, r, frontendURL+r.URL.Path, http.StatusTemporaryRedirect)
+
+	return nil
 }
 
 func requestsJSON(ct string) bool {

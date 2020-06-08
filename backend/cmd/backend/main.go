@@ -47,10 +47,13 @@ func main() {
 		log.Println(err)
 		os.Exit(1)
 	}
+
+	log.Println("shutdown complete")
 }
 
 func run(c *cli.Context) error {
 	log.Println("set up tracing")
+
 	err, jaeger := setupJaeger()
 	if err != nil {
 		return fmt.Errorf("setup minio s3 client: %v", err)

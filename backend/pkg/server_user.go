@@ -18,8 +18,6 @@ func NewServiceServer() *ServiceServer {
 }
 
 func (s *ServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Printf("%s %s", r.Method, r.URL.Path)
-
 	switch r.Method {
 	case http.MethodOptions:
 		return
@@ -30,7 +28,7 @@ func (s *ServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		s.delete(w, r)
 	default:
-		log.Printf("%s %s not allowed", r.URL.Path, r.Method)
+		log.Printf("%s %s not supported", r.Method, r.URL.Path)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }

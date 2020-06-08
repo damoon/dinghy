@@ -2,9 +2,7 @@ package dinghy
 
 import (
 	"context"
-	"log"
 	"net/http"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -40,13 +38,8 @@ func (s *AdminServer) routes() {
 
 func (s *AdminServer) handleHealthz() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// 1 second is the default timeout for readiness probes https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes.
-		ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
-		defer cancel()
-
-		err := s.Storage.healthy(ctx)
+		err := s.Storage.healthy(r.Context())
 		if err != nil {
-			log.Printf("healthcheck: %s", err)
 			w.WriteHeader(http.StatusServiceUnavailable)
 		}
 	}

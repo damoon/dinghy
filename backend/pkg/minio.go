@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/log"
 )
 
 type Storage struct {
@@ -21,6 +22,11 @@ type Storage struct {
 }
 
 func (m Storage) exists(ctx context.Context, path string) (bool, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: stat object")
+	defer span.Finish()
+
+	span.LogFields(log.String("path", path))
+
 	_, err := m.Client.HeadObjectWithContext(ctx, &s3.HeadObjectInput{
 		Bucket: aws.String(m.Bucket),
 		Key:    aws.String(path),
@@ -34,17 +40,22 @@ func (m Storage) exists(ctx context.Context, path string) (bool, error) {
 		return false, nil
 	}
 
+	span.LogFields(log.Error(err))
+
 	return false, fmt.Errorf("stat object %s: %v", path, err)
 }
 
 func (m Storage) healthy(ctx context.Context) error {
-	span, _ := opentracing.StartSpanFromContext(ctx, "rpc: stat bucket")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: stat bucket")
 	defer span.Finish()
+
+	span.LogFields(log.String("bucket", m.Bucket))
 
 	_, err := m.Client.HeadBucketWithContext(ctx, &s3.HeadBucketInput{
 		Bucket: aws.String(m.Bucket),
 	})
 	if err != nil {
+		span.LogFields(log.Error(err))
 		return fmt.Errorf("check bucket: %v", err)
 	}
 
@@ -65,6 +76,11 @@ type File struct {
 }
 
 func (m Storage) list(ctx context.Context, prefix string) (Directory, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: list prefix")
+	defer span.Finish()
+
+	span.LogFields(log.String("prefix", prefix))
+
 	prefix = strings.TrimPrefix(prefix, "/")
 
 	l := Directory{
@@ -79,6 +95,7 @@ func (m Storage) list(ctx context.Context, prefix string) (Directory, error) {
 		Delimiter: aws.String("/"),
 	})
 	if err != nil {
+		span.LogFields(log.Error(err))
 		return Directory{}, fmt.Errorf("list %s: %v", prefix, err)
 	}
 
@@ -101,7 +118,15 @@ func (m Storage) list(ctx context.Context, prefix string) (Directory, error) {
 	return l, nil
 }
 
-func (m Storage) presign(method, path string) (string, error) {
+func (m Storage) presign(ctx context.Context, method, path string) (string, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: presign")
+	defer span.Finish()
+
+	span.LogFields(
+		log.String("method", method),
+		log.String("path", path),
+	)
+
 	var req *request.Request
 	switch method {
 	case http.MethodGet:
@@ -120,11 +145,14 @@ func (m Storage) presign(method, path string) (string, error) {
 			Key:    aws.String(path),
 		})
 	default:
-		return "", fmt.Errorf("method %s not supported", method)
+		err := fmt.Errorf("method %s not supported", method)
+		span.LogFields(log.Error(err))
+		return "", err
 	}
 
 	url, err := req.Presign(10 * time.Minute)
 	if err != nil {
+		span.LogFields(log.Error(err))
 		return "", fmt.Errorf("presign path %s %s: %v", method, path, err)
 	}
 
@@ -132,11 +160,19 @@ func (m Storage) presign(method, path string) (string, error) {
 }
 
 func (m Storage) delete(ctx context.Context, path string) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: delete")
+	defer span.Finish()
+
+	span.LogFields(
+		log.String("path", path),
+	)
+
 	_, err := m.Client.DeleteObjectWithContext(ctx, &s3.DeleteObjectInput{
 		Bucket: aws.String(m.Bucket),
 		Key:    aws.String(path),
 	})
 	if err != nil {
+		span.LogFields(log.Error(err))
 		return err
 	}
 
@@ -144,12 +180,20 @@ func (m Storage) delete(ctx context.Context, path string) error {
 }
 
 func (m Storage) upload(ctx context.Context, path string, file io.ReadSeeker) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: upload")
+	defer span.Finish()
+
+	span.LogFields(
+		log.String("path", path),
+	)
+
 	_, err := m.Client.PutObjectWithContext(ctx, &s3.PutObjectInput{
 		Bucket: aws.String(m.Bucket),
 		Key:    aws.String(path),
 		Body:   file,
 	})
 	if err != nil {
+		span.LogFields(log.Error(err))
 		return err
 	}
 
@@ -157,6 +201,13 @@ func (m Storage) upload(ctx context.Context, path string, file io.ReadSeeker) er
 }
 
 func (m Storage) download(ctx context.Context, path string, w io.WriterAt) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: download")
+	defer span.Finish()
+
+	span.LogFields(
+		log.String("path", path),
+	)
+
 	downloader := s3manager.NewDownloaderWithClient(m.Client)
 
 	_, err := downloader.Download(w, &s3.GetObjectInput{
@@ -164,6 +215,7 @@ func (m Storage) download(ctx context.Context, path string, w io.WriterAt) error
 		Key:    aws.String(path),
 	})
 	if err != nil {
+		span.LogFields(log.Error(err))
 		return fmt.Errorf("download file: %v", err)
 	}
 

@@ -29,3 +29,5 @@ make test
 `DOCKER_HOST=tcp://127.0.0.1:12375 tilt up`
 
 `GO111MODULE=on code .`
+
+https://github.com/opentracing/opentracing-go#serializing-to-the-wire
