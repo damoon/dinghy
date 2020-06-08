@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
@@ -86,15 +88,7 @@ func (m Storage) list(ctx context.Context, prefix string) (Directory, error) {
 
 	for _, object := range ls.Contents {
 		name := strings.TrimPrefix(*object.Key, prefix)
-
-		req, _ := m.Client.GetObjectRequest(&s3.GetObjectInput{
-			Bucket: aws.String(m.Bucket),
-			Key:    object.Key,
-		})
-		url, err := req.Presign(10 * time.Minute)
-		if err != nil {
-			return Directory{}, fmt.Errorf("presign download url %s: %v", *object.Key, err)
-		}
+		url := *object.Key + "?redirect"
 
 		l.Files = append(l.Files, File{
 			Name:        name,
@@ -104,6 +98,36 @@ func (m Storage) list(ctx context.Context, prefix string) (Directory, error) {
 	}
 
 	return l, nil
+}
+
+func (m Storage) presign(method, path string) (string, error) {
+	var req *request.Request
+	switch method {
+	case http.MethodGet:
+		req, _ = m.Client.GetObjectRequest(&s3.GetObjectInput{
+			Bucket: aws.String(m.Bucket),
+			Key:    aws.String(path),
+		})
+	case http.MethodPut:
+		req, _ = m.Client.PutObjectRequest(&s3.PutObjectInput{
+			Bucket: aws.String(m.Bucket),
+			Key:    aws.String(path),
+		})
+	case http.MethodDelete:
+		req, _ = m.Client.DeleteObjectRequest(&s3.DeleteObjectInput{
+			Bucket: aws.String(m.Bucket),
+			Key:    aws.String(path),
+		})
+	default:
+		return "", fmt.Errorf("method %s not supported", method)
+	}
+
+	url, err := req.Presign(10 * time.Minute)
+	if err != nil {
+		return "", fmt.Errorf("presign path %s %s: %v", method, path, err)
+	}
+
+	return url, nil
 }
 
 func (m Storage) delete(ctx context.Context, path string) error {

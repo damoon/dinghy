@@ -3,11 +3,13 @@ package dinghy
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -19,6 +21,7 @@ type ObjectStore interface {
 	delete(ctx context.Context, path string) error
 	download(ctx context.Context, path string, w io.WriterAt) error
 	exists(ctx context.Context, path string) (bool, error)
+	presign(method, path string) (string, error)
 }
 
 func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
@@ -40,7 +43,12 @@ func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.list(w, r)
+	if strings.HasSuffix(path, "/") {
+		s.list(w, r)
+		return
+	}
+
+	w.WriteHeader(http.StatusNotFound)
 }
 
 func (s *ServiceServer) download(w http.ResponseWriter, r *http.Request) {
@@ -49,34 +57,67 @@ func (s *ServiceServer) download(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 
-	tmpfile, err := ioutil.TempFile("", "s3_download")
+	redirect, err := shouldRedirect(r.URL.RawQuery)
 	if err != nil {
-		log.Printf("GET %s: create temp file: %v", path, err)
+		log.Printf("GET %s: check redirect: %v", path, err)
+	}
+
+	if redirect {
+		url, err := s.Storage.presign(http.MethodGet, path)
+		if err != nil {
+			log.Printf("GET %s: redirect: %v", path, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+		return
+	}
+
+	err = s.delieverFile(ctx, path, w)
+	if err != nil {
+		log.Printf("GET %s: send object: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+}
+
+func (s *ServiceServer) delieverFile(ctx context.Context, path string, w io.Writer) error {
+	tmpfile, err := ioutil.TempFile("", "s3_download")
+	if err != nil {
+		return fmt.Errorf("create temp file: %v", err)
 	}
 	defer os.Remove(tmpfile.Name())
 
 	err = s.Storage.download(ctx, path, tmpfile)
 	if err != nil {
-		log.Printf("GET %s: download: %v", path, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return fmt.Errorf("download: %v", err)
 	}
 
 	_, err = tmpfile.Seek(0, 0)
 	if err != nil {
-		log.Printf("GET %s: seek temp file: %v", path, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return fmt.Errorf("seek temp file: %v", err)
 	}
 
 	_, err = io.Copy(w, tmpfile)
 	if err != nil {
-		log.Printf("GET %s: write reponse: %v", path, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return fmt.Errorf("write reponse: %v", err)
 	}
+
+	return nil
+}
+
+func shouldRedirect(rawQuery string) (bool, error) {
+	m, err := url.ParseQuery(rawQuery)
+	if err != nil {
+		return false, fmt.Errorf("parse url parameters: %v", err)
+	}
+	_, ok := m["redirect"]
+	if ok {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func (s *ServiceServer) delete(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +126,24 @@ func (s *ServiceServer) delete(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	err := s.Storage.delete(ctx, path)
+	redirect, err := shouldRedirect(r.URL.RawQuery)
+	if err != nil {
+		log.Printf("DELETE %s: check redirect: %v", path, err)
+	}
+
+	if redirect {
+		url, err := s.Storage.presign(http.MethodDelete, path)
+		if err != nil {
+			log.Printf("DELETE %s: redirect: %v", path, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+		return
+	}
+
+	err = s.Storage.delete(ctx, path)
 	if err != nil {
 		log.Printf("DELETE %s: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -100,35 +158,54 @@ func (s *ServiceServer) put(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	tmpfile, err := ioutil.TempFile("", "s3_upload")
+	redirect, err := shouldRedirect(r.URL.RawQuery)
 	if err != nil {
-		log.Printf("PUT %s: create temp file: %v", path, err)
+		log.Printf("PUT %s: check redirect: %v", path, err)
+	}
+
+	if redirect {
+		url, err := s.Storage.presign(http.MethodPut, path)
+		if err != nil {
+			log.Printf("PUT %s: redirect: %v", path, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+		return
+	}
+
+	err = s.receiveFile(ctx, path, r.Body)
+	if err != nil {
+		log.Printf("PUT %s: receive file: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+}
+
+func (s *ServiceServer) receiveFile(ctx context.Context, path string, r io.Reader) error {
+	tmpfile, err := ioutil.TempFile("", "s3_upload")
+	if err != nil {
+		return fmt.Errorf("create temp file: %v", err)
+	}
 	defer os.Remove(tmpfile.Name())
 
-	_, err = io.Copy(tmpfile, r.Body)
+	_, err = io.Copy(tmpfile, r)
 	if err != nil {
-		log.Printf("PUT %s: write local temp file: %v", path, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return fmt.Errorf("write local temp file: %v", err)
 	}
 
 	_, err = tmpfile.Seek(0, 0)
 	if err != nil {
-		log.Printf("PUT %s: seek temp file: %v", path, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return fmt.Errorf("seek temp file: %v", err)
 	}
 
 	err = s.Storage.upload(ctx, path, tmpfile)
 	if err != nil {
-		log.Printf("PUT %s: upload: %v", path, err)
-		w.WriteHeader(http.StatusInternalServerError)
-
-		return
+		return fmt.Errorf("upload: %v", err)
 	}
+
+	return nil
 }
 
 func (s *ServiceServer) list(w http.ResponseWriter, r *http.Request) {

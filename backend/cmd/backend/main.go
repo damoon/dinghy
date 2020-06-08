@@ -16,7 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/urfave/cli/v2"
+	cli "github.com/urfave/cli/v2"
 	dinghy "gitlab.com/davedamoon/dinghy/backend/pkg"
 )
 
