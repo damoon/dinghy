@@ -18,9 +18,11 @@
 <div id="elm-f0111bc4e658d0f98db96260c16f7e49"></div>
 <script src="/main.js"></script>
 <script>
+if (window.location.hostname != "frontend") {
+  window.location.replace("http://frontend:8000".concat(window.location.pathname));
+}
 var app = Elm.Main.init({ flags: "http://backend:8080", node: document.getElementById("elm-f0111bc4e658d0f98db96260c16f7e49") });
-if (document.getElementById("elm-f0111bc4e658d0f98db96260c16f7e49"))
-{
+if (document.getElementById("elm-f0111bc4e658d0f98db96260c16f7e49")) {
   document.getElementById("elm-f0111bc4e658d0f98db96260c16f7e49").innerText = 'This is a headless program, meaning there is nothing to show here.\n\nI started the program anyway though, and you can access it as `app` in the developer console.';
 }
 </script>
