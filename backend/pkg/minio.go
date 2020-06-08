@@ -37,9 +37,6 @@ func (m Storage) exists(ctx context.Context, path string) (bool, error) {
 }
 
 func (m Storage) healthy(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
-
 	err := m.Client.WaitUntilBucketExistsWithContext(ctx, &s3.HeadBucketInput{
 		Bucket: aws.String(m.Bucket),
 	})

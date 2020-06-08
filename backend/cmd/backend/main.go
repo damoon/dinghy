@@ -66,22 +66,24 @@ func run(c *cli.Context) error {
 
 	adm := dinghy.NewAdminServer()
 	adm.Storage = storage
-	admServer := httpServer(adm, c.String("admin-addr"))
+	admHandler := dinghy.Timeout(1*time.Second, adm)
+	admServer := httpServer(admHandler, c.String("admin-addr"))
 
 	svc := dinghy.NewServiceServer()
 	svc.Storage = storage
 	svc.FrontendURL = c.String("frontend-url")
-	svcServer := httpServer(svc, c.String("service-addr"))
+	svcHandler := dinghy.Timeout(30*time.Second, svc)
+	svcServer := httpServer(svcHandler, c.String("service-addr"))
 
-	log.Println("start admin server")
+	log.Println("starting admin server")
 
 	go mustListenAndServe(admServer)
 
-	log.Println("start service server")
+	log.Println("starting service server")
 
 	go mustListenAndServe(svcServer)
 
-	log.Println("fully started")
+	log.Println("running")
 
 	awaitShutdown()
 

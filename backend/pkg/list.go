@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"time"
 )
 
 type ObjectStore interface {
@@ -27,10 +26,7 @@ type ObjectStore interface {
 func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
-	defer cancel()
-
-	found, err := s.Storage.exists(ctx, path)
+	found, err := s.Storage.exists(r.Context(), path)
 	if err != nil {
 		log.Printf("GET %s: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -54,9 +50,6 @@ func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
 func (s *ServiceServer) download(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
-	defer cancel()
-
 	redirect, err := shouldRedirect(r.URL.RawQuery)
 	if err != nil {
 		log.Printf("GET %s: check redirect: %v", path, err)
@@ -74,7 +67,7 @@ func (s *ServiceServer) download(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.delieverFile(ctx, path, w)
+	err = s.delieverFile(r.Context(), path, w)
 	if err != nil {
 		log.Printf("GET %s: send object: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -123,9 +116,6 @@ func shouldRedirect(rawQuery string) (bool, error) {
 func (s *ServiceServer) delete(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-	defer cancel()
-
 	redirect, err := shouldRedirect(r.URL.RawQuery)
 	if err != nil {
 		log.Printf("DELETE %s: check redirect: %v", path, err)
@@ -143,7 +133,7 @@ func (s *ServiceServer) delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.Storage.delete(ctx, path)
+	err = s.Storage.delete(r.Context(), path)
 	if err != nil {
 		log.Printf("DELETE %s: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -152,11 +142,6 @@ func (s *ServiceServer) delete(w http.ResponseWriter, r *http.Request) {
 
 func (s *ServiceServer) put(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
-
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
-	defer cancel()
-
-	defer r.Body.Close()
 
 	redirect, err := shouldRedirect(r.URL.RawQuery)
 	if err != nil {
@@ -175,7 +160,7 @@ func (s *ServiceServer) put(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.receiveFile(ctx, path, r.Body)
+	err = s.receiveFile(r.Context(), path, r.Body)
 	if err != nil {
 		log.Printf("PUT %s: receive file: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -213,10 +198,7 @@ func (s *ServiceServer) list(w http.ResponseWriter, r *http.Request) {
 
 	setupCORS(&w, r, s.FrontendURL)
 
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
-	defer cancel()
-
-	l, err := s.Storage.list(ctx, path)
+	l, err := s.Storage.list(r.Context(), path)
 	if err != nil {
 		log.Printf("list %s: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
