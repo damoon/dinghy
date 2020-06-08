@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/opentracing/opentracing-go"
 )
 
 type Storage struct {
@@ -37,11 +38,14 @@ func (m Storage) exists(ctx context.Context, path string) (bool, error) {
 }
 
 func (m Storage) healthy(ctx context.Context) error {
-	err := m.Client.WaitUntilBucketExistsWithContext(ctx, &s3.HeadBucketInput{
+	span, _ := opentracing.StartSpanFromContext(ctx, "rpc: stat bucket")
+	defer span.Finish()
+
+	_, err := m.Client.HeadBucketWithContext(ctx, &s3.HeadBucketInput{
 		Bucket: aws.String(m.Bucket),
 	})
 	if err != nil {
-		return fmt.Errorf("wait for bucket: %v", err)
+		return fmt.Errorf("check bucket: %v", err)
 	}
 
 	return nil

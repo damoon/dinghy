@@ -4,10 +4,11 @@ go 1.13
 
 require (
 	github.com/aws/aws-sdk-go v1.31.12
-	github.com/go-ini/ini v1.57.0 // indirect
-	github.com/google/uuid v1.1.1
-	github.com/minio/minio-go v6.0.14+incompatible
-	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
+	github.com/opentracing/opentracing-go v1.1.0
 	github.com/prometheus/client_golang v1.6.0
+	github.com/uber/jaeger-client-go v2.23.1+incompatible
+	github.com/uber/jaeger-lib v2.2.0+incompatible // indirect
 	github.com/urfave/cli/v2 v2.2.0
+	go.uber.org/atomic v1.6.0 // indirect
 )

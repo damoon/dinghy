@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,6 +18,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/opentracing/opentracing-go"
+	"github.com/uber/jaeger-client-go/config"
 	cli "github.com/urfave/cli/v2"
 	dinghy "gitlab.com/davedamoon/dinghy/backend/pkg"
 )
@@ -46,7 +50,14 @@ func main() {
 }
 
 func run(c *cli.Context) error {
-	log.Println("connect to minio")
+	log.Println("set up tracing")
+	err, jaeger := setupJaeger()
+	if err != nil {
+		return fmt.Errorf("setup minio s3 client: %v", err)
+	}
+	defer jaeger.Close()
+
+	log.Println("set up storage")
 
 	s3Client, err := setupMinio(
 		c.String("s3-endpoint"),
@@ -67,6 +78,8 @@ func run(c *cli.Context) error {
 	adm := dinghy.NewAdminServer()
 	adm.Storage = storage
 	admHandler := dinghy.Timeout(1*time.Second, adm)
+	admHandler = dinghy.RequestID(rand.Int63, admHandler)
+	admHandler = dinghy.InitTraceContext(admHandler)
 	admServer := httpServer(admHandler, c.String("admin-addr"))
 
 	svc := dinghy.NewServiceServer()
@@ -74,6 +87,8 @@ func run(c *cli.Context) error {
 	svc.FrontendURL = c.String("frontend-url")
 	svcHandler := dinghy.Timeout(30*time.Second, svc)
 	svcHandler = dinghy.CORS(c.String("frontend-url"), svcHandler)
+	svcHandler = dinghy.RequestID(rand.Int63, svcHandler)
+	svcHandler = dinghy.InitTraceContext(svcHandler)
 	svcServer := httpServer(svcHandler, c.String("service-addr"))
 
 	log.Println("starting admin server")
@@ -133,6 +148,22 @@ func setupMinio(endpoint, accessKey, secretPath string, useSSL bool, region, buc
 	s3Client := s3.New(newSession)
 
 	return s3Client, nil
+}
+
+func setupJaeger() (error, io.Closer) {
+	cfg, err := config.FromEnv()
+	if err != nil {
+		return fmt.Errorf("load config from Env Vars: %v", err), nil
+	}
+
+	tracer, closer, err := cfg.NewTracer()
+	if err != nil {
+		return err, nil
+	}
+
+	opentracing.SetGlobalTracer(tracer)
+
+	return nil, closer
 }
 
 func httpServer(h http.Handler, addr string) *http.Server {
