@@ -15,7 +15,6 @@ RUN go mod download
 COPY main.go /tests/main.go
 RUN go build -o /go/bin/main .
 
-COPY browser.bats /tests
-COPY favicon.png /tests
+COPY . /tests
 
 CMD bats . && echo "done"

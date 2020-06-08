@@ -158,7 +158,7 @@ view model =
               , text "Dinghy"
               ]
           , viewFetching model.fetching
-          , viewDirectory model.dir
+          , viewDirectory model.backend model.dir
           ]
       ]
   }
@@ -184,9 +184,9 @@ errorBox err =
     [ text err ]
 
 
-viewDirectory : Maybe Directory -> Html Msg
-viewDirectory dira =
-  case dira of
+viewDirectory : String -> Maybe Directory -> Html Msg
+viewDirectory backend maybeDir =
+  case maybeDir of
     Nothing ->
       text ""
     Just dir ->
@@ -196,7 +196,7 @@ viewDirectory dira =
           , br [] []
           ]
         , List.map viewFolder dir.directories
-        , List.map viewFile dir.files
+        , List.map (viewFile backend) dir.files
         ])
 
 navigation : String -> List (Html Msg)
@@ -261,8 +261,8 @@ viewFolder name =
       ]
     ]
 
-viewFile : File -> Html Msg
-viewFile fi =
+viewFile : String -> File -> Html Msg
+viewFile backend fi =
   let
     iconclass = "fiv-sqo fiv-icon-" ++ fi.icon
   in
@@ -271,7 +271,7 @@ viewFile fi =
     [ div 
       [ class "icon-inner" ]
       [ a 
-        [ href fi.downloadURL ]
+        [ href (backend ++ "/" ++ fi.downloadURL) ]
         [ span
           [ class iconclass
           , style "width" "72px"

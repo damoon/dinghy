@@ -1,10 +1,10 @@
 
 setup () {
-  curl --silent --fail --max-time 5 -X PUT -T favicon.png http://backend:8080/subfolder/favicon.png
+  curl --silent --fail --max-time 5 -X PUT -T hello-world.txt http://backend:8080/subfolder/hello-world.txt
 }
 
 teardown () {
-  curl --silent --fail --max-time 5 -X DELETE http://backend:8080/subfolder/favicon.png
+  curl --silent --fail --max-time 5 -X DELETE http://backend:8080/subfolder/hello-world.txt
 
   echo teardown log
   echo "exit code: $status"

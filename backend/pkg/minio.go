@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -130,9 +132,13 @@ func (m Storage) presign(ctx context.Context, method, path string) (string, erro
 	var req *request.Request
 	switch method {
 	case http.MethodGet:
+		extention := filepath.Ext(path)
+		type_ := mime.TypeByExtension(extention)
 		req, _ = m.Client.GetObjectRequest(&s3.GetObjectInput{
 			Bucket: aws.String(m.Bucket),
 			Key:    aws.String(path),
+			//			ResponseContentDisposition: aws.String("attachment"), // forces browser to download; vs inline to open directly
+			ResponseContentType: aws.String(type_),
 		})
 	case http.MethodPut:
 		req, _ = m.Client.PutObjectRequest(&s3.PutObjectInput{
