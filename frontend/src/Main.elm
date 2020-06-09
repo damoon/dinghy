@@ -3,9 +3,9 @@ module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav
 import Html exposing (text, img, h1, div, Html, br, h2, a, span)
-import Html.Attributes exposing (class, id, style, src, href)
+import Html.Attributes exposing (class, id, style, src, href, height)
 import Http
-import Json.Decode exposing (Decoder, field, string, int, list, map, map3, map4)
+import Json.Decode exposing (Decoder, field, string, int, list, map, map3, map5, maybe)
 import Url
 import List exposing (concat)
 import Process
@@ -42,7 +42,7 @@ type Fetching
 init : String -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init backend url key =
   ( Model key url Nothing Loading backend
-  , Cmd.batch [ getRandomCatGif backend url.path
+  , Cmd.batch [ fetchDirectory backend url.path
               , delay 500 (LoadingIsSlow url.path)
               ]
   )
@@ -75,7 +75,7 @@ update msg model =
           ( model, Cmd.none )
         _ ->
           ( { model | fetching = Loading }
-          , Cmd.batch [ getRandomCatGif model.backend model.url.path
+          , Cmd.batch [ fetchDirectory model.backend model.url.path
                       , delay 500 (LoadingIsSlow model.url.path) ] )
 
     LoadingIsSlow path ->
@@ -115,7 +115,7 @@ update msg model =
         ( model, Cmd.none )
       else
         ( { model | url = url, fetching = Loading }
-        , Cmd.batch [ getRandomCatGif model.backend url.path
+        , Cmd.batch [ fetchDirectory model.backend url.path
                     , delay 500 (LoadingIsSlow url.path)
                     ]
         )
@@ -270,33 +270,53 @@ viewFolder name =
 
 viewFile : String -> File -> Html Msg
 viewFile backend fi =
-  let
-    iconclass = "fiv-sqo fiv-icon-" ++ fi.icon
-  in
   div 
     [ class "icon" ]
     [ div 
       [ class "icon-inner" ]
       [ a 
         [ href (backend ++ "/" ++ fi.downloadURL) ]
-        [ span
-          [ class iconclass
-          , style "width" "72px"
-          , style "height" "72px"
-          , style "margin" "3px"
-          ]
-          []
-        , br [] []
-        , text fi.name
-        ]
+        (viewIcon backend fi)
       ]
     ]
 
+viewIcon : String -> File -> List (Html msg)
+viewIcon backend fi =
+  case fi.thumbnail of
+    Nothing ->
+      [ span
+        [ class ("fiv-sqo fiv-icon-" ++ fi.icon)
+        , style "width" "72px"
+        , style "height" "72px"
+        , style "margin" "3px"
+        ]
+        []
+      , br [] []
+      , text fi.name
+      ]
+    Just url ->
+      [ div
+        [ style "height" "72px"
+        , style "width" "122px"
+        , style "position" "relative"
+        ]
+        [ img
+          [ src (backend ++ "/" ++ url)
+          , style "object-fit" "scale-down"
+          , style "position" "absolute"
+          , style "top" "50%"
+          , style "left" "50%"
+          , style "transform" "translate(-50%,-50%)"
+          ]
+          []
+        ]
+      , text fi.name
+      ]
 -- HTTP
 
 
-getRandomCatGif : String -> String -> Cmd Msg
-getRandomCatGif backend path =
+fetchDirectory : String -> String -> Cmd Msg
+fetchDirectory backend path =
   Http.request
     { method = "GET"
     , url = backend ++ path
@@ -328,7 +348,7 @@ type alias File =
   , size : Int
   , downloadURL : String
   , icon : String
---  , icon : Maybe String
+  , thumbnail : Maybe String
   }
 
 directoriesDecoder : Decoder (List String)
@@ -341,9 +361,9 @@ filesDecoder =
 
 fileDecoder : Decoder File
 fileDecoder =
-  map4 File
+  map5 File
     (field "Name" string)
     (field "Size" int)
     (field "DownloadURL" string)
     (field "Icon" string)
---    (maybe (field "Icon" string))
+    (maybe (field "Thumbnail" string))

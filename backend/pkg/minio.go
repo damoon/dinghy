@@ -23,28 +23,29 @@ type Storage struct {
 	Bucket string
 }
 
-func (m Storage) exists(ctx context.Context, path string) (bool, error) {
+func (m Storage) exists(ctx context.Context, path string) (bool, string, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: stat object")
 	defer span.Finish()
 
 	span.LogFields(log.String("path", path))
 
-	_, err := m.Client.HeadObjectWithContext(ctx, &s3.HeadObjectInput{
+	head, err := m.Client.HeadObjectWithContext(ctx, &s3.HeadObjectInput{
 		Bucket: aws.String(m.Bucket),
 		Key:    aws.String(path),
 	})
 
 	if err == nil {
-		return true, nil
+		etag := strings.Trim(*head.ETag, "\"")
+		return true, etag, nil
 	}
 
 	if strings.Contains(err.Error(), "NotFound: Not Found") {
-		return false, nil
+		return false, "", nil
 	}
 
 	span.LogFields(log.Error(err))
 
-	return false, fmt.Errorf("stat object %s: %v", path, err)
+	return false, "", fmt.Errorf("stat object %s: %v", path, err)
 }
 
 func (m Storage) healthy(ctx context.Context) error {
@@ -75,6 +76,7 @@ type File struct {
 	DownloadURL string
 	Size        int64
 	Icon        string
+	Thumbnail   string `json:"Thumbnail,omitempty"`
 }
 
 func (m Storage) list(ctx context.Context, prefix string) (Directory, error) {
@@ -83,17 +85,17 @@ func (m Storage) list(ctx context.Context, prefix string) (Directory, error) {
 
 	span.LogFields(log.String("prefix", prefix))
 
-	prefix = strings.TrimPrefix(prefix, "/")
+	//	prefix = strings.TrimPrefix(prefix, "/")
 
 	l := Directory{
-		Path:        prefix,
+		Path:        strings.TrimPrefix(prefix, "/"),
 		Directories: []string{},
 		Files:       []File{},
 	}
 
 	ls, err := m.Client.ListObjectsV2WithContext(ctx, &s3.ListObjectsV2Input{
 		Bucket:    aws.String(m.Bucket),
-		Prefix:    aws.String(prefix),
+		Prefix:    aws.String(strings.TrimPrefix(filesDirectory, "/") + prefix),
 		Delimiter: aws.String("/"),
 	})
 	if err != nil {
@@ -102,19 +104,27 @@ func (m Storage) list(ctx context.Context, prefix string) (Directory, error) {
 	}
 
 	for _, object := range ls.CommonPrefixes {
-		name := strings.TrimPrefix(strings.TrimSuffix(*object.Prefix, "/"), prefix)
+		name := *object.Prefix
+		name = strings.TrimPrefix(name, filesDirectory+prefix)
+		name = strings.TrimSuffix(name, "/")
 		l.Directories = append(l.Directories, name)
 	}
 
 	for _, object := range ls.Contents {
-		name := strings.TrimPrefix(*object.Key, prefix)
-		url := *object.Key + "?redirect"
-
-		l.Files = append(l.Files, File{
+		name := strings.TrimPrefix(*object.Key, filesDirectory+prefix)
+		url := strings.TrimPrefix(*object.Key+"?redirect", filesDirectory+"/")
+		file := File{
 			Name:        name,
 			Size:        *object.Size,
 			DownloadURL: url,
-		})
+			Icon:        icon(name),
+		}
+
+		if thumbnailSupported(name) {
+			file.Thumbnail = url + "&thumbnail"
+		}
+
+		l.Files = append(l.Files, file)
 	}
 
 	return l, nil
@@ -133,12 +143,12 @@ func (m Storage) presign(ctx context.Context, method, path string) (string, erro
 	switch method {
 	case http.MethodGet:
 		extention := filepath.Ext(path)
-		type_ := mime.TypeByExtension(extention)
+		typee := mime.TypeByExtension(extention)
 		req, _ = m.Client.GetObjectRequest(&s3.GetObjectInput{
 			Bucket: aws.String(m.Bucket),
 			Key:    aws.String(path),
 			//			ResponseContentDisposition: aws.String("attachment"), // forces browser to download; vs inline to open directly
-			ResponseContentType: aws.String(type_),
+			ResponseContentType: aws.String(typee),
 		})
 	case http.MethodPut:
 		req, _ = m.Client.PutObjectRequest(&s3.PutObjectInput{

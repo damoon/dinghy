@@ -19,14 +19,15 @@ type ObjectStore interface {
 	upload(ctx context.Context, path string, file io.ReadSeeker) error
 	delete(ctx context.Context, path string) error
 	download(ctx context.Context, path string, w io.WriterAt) error
-	exists(ctx context.Context, path string) (bool, error)
+	exists(ctx context.Context, path string) (bool, string, error)
 	presign(ctx context.Context, method, path string) (string, error)
 }
 
 func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
+	ctx := r.Context()
 
-	found, err := s.Storage.exists(r.Context(), path)
+	found, etag, err := s.Storage.exists(ctx, filesDirectory+path)
 	if err != nil {
 		log.Printf("GET %s: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -34,7 +35,7 @@ func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if found && path != "/" {
-		err = s.download(w, r)
+		err = s.download(ctx, etag, w, r)
 		if err != nil {
 			log.Printf("GET %s: %v", path, err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -54,18 +55,25 @@ func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 }
 
-func (s *ServiceServer) download(w http.ResponseWriter, r *http.Request) error {
-	path := r.URL.Path
+func (s *ServiceServer) download(ctx context.Context, etag string, w http.ResponseWriter, r *http.Request) error {
+	path := filesDirectory + r.URL.Path
 
-	redirect, err := shouldRedirect(r.URL.RawQuery)
+	redirect, thumbnail, err := parseRequest(r.URL.RawQuery)
 	if err != nil {
-		log.Printf("GET %s: check redirect: %v", path, err)
+		return fmt.Errorf("GET %s: parse parameters: %v", path, err)
+	}
+
+	if thumbnail {
+		path, err = s.prepareThumbnail(ctx, etag, r.URL.Path)
+		if err != nil {
+			return fmt.Errorf("GET %s: prepare thumbnail: %v", path, err)
+		}
 	}
 
 	if redirect {
 		url, err := s.Storage.presign(r.Context(), http.MethodGet, path)
 		if err != nil {
-			return fmt.Errorf("GET %s: redirect: %v", path, err)
+			return fmt.Errorf("GET %s: presign: %v", path, err)
 		}
 
 		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
@@ -74,7 +82,7 @@ func (s *ServiceServer) download(w http.ResponseWriter, r *http.Request) error {
 
 	err = s.delieverFile(r.Context(), path, w)
 	if err != nil {
-		return fmt.Errorf("GET %s: send object: %v", path, err)
+		return fmt.Errorf("GET %s: deliever file: %v", path, err)
 	}
 
 	return nil
@@ -105,29 +113,28 @@ func (s *ServiceServer) delieverFile(ctx context.Context, path string, w io.Writ
 	return nil
 }
 
-func shouldRedirect(rawQuery string) (bool, error) {
+func parseRequest(rawQuery string) (bool, bool, error) {
 	m, err := url.ParseQuery(rawQuery)
 	if err != nil {
-		return false, fmt.Errorf("parse url parameters: %v", err)
-	}
-	_, ok := m["redirect"]
-	if ok {
-		return true, nil
+		return false, false, fmt.Errorf("parse url parameters: %v", err)
 	}
 
-	return false, nil
+	_, redirect := m["redirect"]
+	_, thumbnail := m["thumbnail"]
+
+	return redirect, thumbnail, nil
 }
 
 func (s *ServiceServer) delete(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 
-	redirect, err := shouldRedirect(r.URL.RawQuery)
+	redirect, _, err := parseRequest(r.URL.RawQuery)
 	if err != nil {
 		log.Printf("DELETE %s: check redirect: %v", path, err)
 	}
 
 	if redirect {
-		url, err := s.Storage.presign(r.Context(), http.MethodDelete, path)
+		url, err := s.Storage.presign(r.Context(), http.MethodDelete, filesDirectory+path)
 		if err != nil {
 			log.Printf("DELETE %s: redirect: %v", path, err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -138,7 +145,7 @@ func (s *ServiceServer) delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.Storage.delete(r.Context(), path)
+	err = s.Storage.delete(r.Context(), filesDirectory+path)
 	if err != nil {
 		log.Printf("DELETE %s: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -148,13 +155,13 @@ func (s *ServiceServer) delete(w http.ResponseWriter, r *http.Request) {
 func (s *ServiceServer) put(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 
-	redirect, err := shouldRedirect(r.URL.RawQuery)
+	redirect, _, err := parseRequest(r.URL.RawQuery)
 	if err != nil {
 		log.Printf("PUT %s: check redirect: %v", path, err)
 	}
 
 	if redirect {
-		url, err := s.Storage.presign(r.Context(), http.MethodPut, path)
+		url, err := s.Storage.presign(r.Context(), http.MethodPut, filesDirectory+path)
 		if err != nil {
 			log.Printf("PUT %s: redirect: %v", path, err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -165,7 +172,7 @@ func (s *ServiceServer) put(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.receiveFile(r.Context(), path, r.Body)
+	err = s.receiveFile(r.Context(), filesDirectory+path, r.Body)
 	if err != nil {
 		log.Printf("PUT %s: receive file: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -205,8 +212,6 @@ func (s *ServiceServer) list(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return fmt.Errorf("list %s: %v", path, err)
 	}
-
-	addIcons(l.Files)
 
 	err = respond(w, r, l, s.FrontendURL)
 	if err != nil {
