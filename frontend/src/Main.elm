@@ -150,7 +150,14 @@ subscriptions _ =
 
 view : Model -> Browser.Document Msg
 view model =
-  { title = "URL Interceptor"
+  let
+    title = case model.dir of
+              Nothing ->
+                "dinghy"
+              Just dir ->
+                "dinghy/" ++ dir.path
+  in
+  { title = title
   , body =
       [ div []
           [ h1 []
