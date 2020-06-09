@@ -3,7 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav
 import Html exposing (text, img, h1, div, Html, br, h2, a, span)
-import Html.Attributes exposing (class, id, style, src, href, height)
+import Html.Attributes exposing (class, id, style, src, href)
 import Http
 import Json.Decode exposing (Decoder, field, string, int, list, map, map3, map5, maybe)
 import Url

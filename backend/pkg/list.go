@@ -245,12 +245,8 @@ func respond(w http.ResponseWriter, r *http.Request, l Directory, frontendURL st
 	return nil
 }
 
-func requestsJSON(ct string) bool {
-	if strings.Contains(strings.ToLower(ct), "application/json") {
-		return true
-	}
-
-	return false
+func requestsJSON(accept string) bool {
+	return strings.Contains(strings.ToLower(accept), "application/json")
 }
 
 func isCLIClient(agent string) bool {
