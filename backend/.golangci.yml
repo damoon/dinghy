@@ -5,7 +5,7 @@ issues:
   exclude:
      - Using the variable on range scope `tt` in function literal
      - "`adn` is a misspelling of `and`"
-     - ineffectual assignment to `ctx` (ineffassign)
+     - ineffectual assignment to `ctx`
 #  exclude-rules:
 #    - path: _test\.go
 #      linters:
