@@ -8,7 +8,6 @@ import (
 	_ "image/jpeg" // load jpeg image support
 	"image/png"    // load png image support
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -50,7 +49,7 @@ func (s *ServiceServer) prepareThumbnail(ctx context.Context, etag, path string)
 
 	thumbnailPath := thumbnailDirectory + "/" + etag + ".png"
 
-	exists, _, err := s.Storage.exists(ctx, thumbnailPath)
+	exists, _, _, err := s.Storage.exists(ctx, thumbnailPath)
 	if err != nil {
 		return "", fmt.Errorf("lookup cached thumbnail: %v", err)
 	}
@@ -75,7 +74,7 @@ func (s *ServiceServer) prepareThumbnail(ctx context.Context, etag, path string)
 		return "", fmt.Errorf("seek file: %v", err)
 	}
 
-	err = resizeImage(ctx, tmpfile)
+	contentType, err := resizeImage(ctx, tmpfile)
 	if err != nil {
 		return "", fmt.Errorf("resize image: %v", err)
 	}
@@ -85,7 +84,7 @@ func (s *ServiceServer) prepareThumbnail(ctx context.Context, etag, path string)
 		return "", fmt.Errorf("seek thumbnail temp file: %v", err)
 	}
 
-	err = s.Storage.upload(ctx, thumbnailPath, tmpfile)
+	err = s.Storage.upload(ctx, thumbnailPath, tmpfile, contentType)
 	if err != nil {
 		return "", fmt.Errorf("upload thumbnail: %v", err)
 	}
@@ -93,13 +92,13 @@ func (s *ServiceServer) prepareThumbnail(ctx context.Context, etag, path string)
 	return thumbnailPath, nil
 }
 
-func resizeImage(ctx context.Context, f *os.File) error {
+func resizeImage(ctx context.Context, f *os.File) (string, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "create thumbnail")
 	defer span.Finish()
 
 	in, _, err := image.Decode(f)
 	if err != nil {
-		log.Fatal(err)
+		return "", fmt.Errorf("open image: %v", err)
 	}
 
 	spanCompute, ctx := opentracing.StartSpanFromContext(ctx, "compute thumbnail")
@@ -108,18 +107,18 @@ func resizeImage(ctx context.Context, f *os.File) error {
 
 	_, err = f.Seek(0, 0)
 	if err != nil {
-		return fmt.Errorf("seek thumbnail file: %v", err)
+		return "", fmt.Errorf("seek thumbnail file: %v", err)
 	}
 
 	err = f.Truncate(0)
 	if err != nil {
-		return fmt.Errorf("truncate thumbnail file: %v", err)
+		return "", fmt.Errorf("truncate thumbnail file: %v", err)
 	}
 
 	err = png.Encode(f, out)
 	if err != nil {
-		return fmt.Errorf("save thumbnail back to file: %v", err)
+		return "", fmt.Errorf("save thumbnail back to file: %v", err)
 	}
 
-	return nil
+	return "image/png", nil
 }

@@ -8,18 +8,20 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"mime"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
 type ObjectStore interface {
 	list(ctx context.Context, prefix string) (Directory, error)
-	upload(ctx context.Context, path string, file io.ReadSeeker) error
+	upload(ctx context.Context, path string, file io.ReadSeeker, contentType string) error
 	delete(ctx context.Context, path string) error
 	download(ctx context.Context, path string, w io.WriterAt) error
-	exists(ctx context.Context, path string) (bool, string, error)
+	exists(ctx context.Context, path string) (bool, string, string, error)
 	presign(ctx context.Context, method, path string) (string, error)
 }
 
@@ -27,7 +29,7 @@ func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	ctx := r.Context()
 
-	found, etag, err := s.Storage.exists(ctx, filesDirectory+path)
+	found, etag, contentType, err := s.Storage.exists(ctx, filesDirectory+path)
 	if err != nil {
 		log.Printf("GET %s: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -35,7 +37,7 @@ func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if found && path != "/" {
-		err = s.download(ctx, etag, w, r)
+		err = s.download(ctx, etag, contentType, w, r)
 		if err != nil {
 			log.Printf("GET %s: %v", path, err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -55,7 +57,7 @@ func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 }
 
-func (s *ServiceServer) download(ctx context.Context, etag string, w http.ResponseWriter, r *http.Request) error {
+func (s *ServiceServer) download(ctx context.Context, etag, contentType string, w http.ResponseWriter, r *http.Request) error {
 	path := filesDirectory + r.URL.Path
 
 	redirect, thumbnail, err := parseRequest(r.URL.RawQuery)
@@ -79,6 +81,8 @@ func (s *ServiceServer) download(ctx context.Context, etag string, w http.Respon
 		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 		return nil
 	}
+
+	w.Header().Add("Content-Type", contentType)
 
 	err = s.delieverFile(r.Context(), path, w)
 	if err != nil {
@@ -172,7 +176,7 @@ func (s *ServiceServer) put(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.receiveFile(r.Context(), filesDirectory+path, r.Body)
+	err = s.receiveFile(r.Context(), filesDirectory+path, r)
 	if err != nil {
 		log.Printf("PUT %s: receive file: %v", path, err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -180,14 +184,14 @@ func (s *ServiceServer) put(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *ServiceServer) receiveFile(ctx context.Context, path string, r io.Reader) error {
+func (s *ServiceServer) receiveFile(ctx context.Context, path string, r *http.Request) error {
 	tmpfile, err := ioutil.TempFile("", "s3_upload")
 	if err != nil {
 		return fmt.Errorf("create temp file: %v", err)
 	}
 	defer os.Remove(tmpfile.Name())
 
-	_, err = io.Copy(tmpfile, r)
+	_, err = io.Copy(tmpfile, r.Body)
 	if err != nil {
 		return fmt.Errorf("write local temp file: %v", err)
 	}
@@ -197,7 +201,13 @@ func (s *ServiceServer) receiveFile(ctx context.Context, path string, r io.Reade
 		return fmt.Errorf("seek temp file: %v", err)
 	}
 
-	err = s.Storage.upload(ctx, path, tmpfile)
+	contentType := r.Header.Get("Content-Type")
+	if contentType == "" {
+		extention := filepath.Ext(path)
+		contentType = mime.TypeByExtension(extention)
+	}
+
+	err = s.Storage.upload(ctx, path, tmpfile, contentType)
 	if err != nil {
 		return fmt.Errorf("upload: %v", err)
 	}

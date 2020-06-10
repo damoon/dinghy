@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"mime"
 	"net/http"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -23,7 +21,7 @@ type Storage struct {
 	Bucket string
 }
 
-func (m Storage) exists(ctx context.Context, path string) (bool, string, error) {
+func (m Storage) exists(ctx context.Context, path string) (bool, string, string, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: stat object")
 	defer span.Finish()
 
@@ -35,17 +33,18 @@ func (m Storage) exists(ctx context.Context, path string) (bool, string, error) 
 	})
 
 	if err == nil {
+		contentType := *head.ContentType
 		etag := strings.Trim(*head.ETag, "\"")
-		return true, etag, nil
+		return true, etag, contentType, nil
 	}
 
 	if strings.Contains(err.Error(), "NotFound: Not Found") {
-		return false, "", nil
+		return false, "", "", nil
 	}
 
 	span.LogFields(log.Error(err))
 
-	return false, "", fmt.Errorf("stat object %s: %v", path, err)
+	return false, "", "", fmt.Errorf("stat object %s: %v", path, err)
 }
 
 func (m Storage) healthy(ctx context.Context) error {
@@ -142,13 +141,9 @@ func (m Storage) presign(ctx context.Context, method, path string) (string, erro
 	var req *request.Request
 	switch method {
 	case http.MethodGet:
-		extention := filepath.Ext(path)
-		typee := mime.TypeByExtension(extention)
 		req, _ = m.Client.GetObjectRequest(&s3.GetObjectInput{
 			Bucket: aws.String(m.Bucket),
 			Key:    aws.String(path),
-			//			ResponseContentDisposition: aws.String("attachment"), // forces browser to download; vs inline to open directly
-			ResponseContentType: aws.String(typee),
 		})
 	case http.MethodPut:
 		req, _ = m.Client.PutObjectRequest(&s3.PutObjectInput{
@@ -195,7 +190,7 @@ func (m Storage) delete(ctx context.Context, path string) error {
 	return nil
 }
 
-func (m Storage) upload(ctx context.Context, path string, file io.ReadSeeker) error {
+func (m Storage) upload(ctx context.Context, path string, file io.ReadSeeker, contentType string) error {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: upload")
 	defer span.Finish()
 
@@ -203,11 +198,17 @@ func (m Storage) upload(ctx context.Context, path string, file io.ReadSeeker) er
 		log.String("path", path),
 	)
 
-	_, err := m.Client.PutObjectWithContext(ctx, &s3.PutObjectInput{
+	put := &s3.PutObjectInput{
 		Bucket: aws.String(m.Bucket),
 		Key:    aws.String(path),
 		Body:   file,
-	})
+	}
+
+	if contentType != "" {
+		put.ContentType = aws.String(contentType)
+	}
+
+	_, err := m.Client.PutObjectWithContext(ctx, put)
 	if err != nil {
 		span.LogFields(log.Error(err))
 		return err

@@ -1,7 +1,7 @@
 
 function cleanup {
   curl --max-time 5 -X DELETE http://backend:8080/favicon.png
-  unlink download.png || true
+  unlink list || true
 }
 
 setup () {
