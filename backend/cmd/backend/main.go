@@ -22,6 +22,7 @@ import (
 	"github.com/uber/jaeger-client-go/config"
 	cli "github.com/urfave/cli/v2"
 	dinghy "gitlab.com/davedamoon/dinghy/backend/pkg"
+	"gitlab.com/davedamoon/dinghy/backend/pkg/middleware"
 )
 
 func main() {
@@ -80,20 +81,20 @@ func run(c *cli.Context) error {
 
 	adm := dinghy.NewAdminServer()
 	adm.Storage = storage
-	admHandler := dinghy.RequestID(rand.Int63, adm)
-	admHandler = dinghy.InitTraceContext(admHandler)
+	admHandler := middleware.RequestID(rand.Int63, adm)
+	admHandler = middleware.InitTraceContext(admHandler)
 	//admHandler = dinghy.InstrumentHttpHandler(admHandler) // reduce noise
-	admHandler = dinghy.Timeout(900*time.Millisecond, admHandler)
+	admHandler = middleware.Timeout(900*time.Millisecond, admHandler)
 	admServer := httpServer(admHandler, c.String("admin-addr"))
 
 	svc := dinghy.NewServiceServer()
 	svc.Storage = storage
 	svc.FrontendURL = c.String("frontend-url")
-	svcHandler := dinghy.CORS(c.String("frontend-url"), svc)
-	svcHandler = dinghy.RequestID(rand.Int63, svcHandler)
-	svcHandler = dinghy.InitTraceContext(svcHandler)
-	svcHandler = dinghy.InstrumentHttpHandler(svcHandler)
-	svcHandler = dinghy.Timeout(29*time.Second, svcHandler)
+	svcHandler := middleware.CORS(c.String("frontend-url"), svc)
+	svcHandler = middleware.RequestID(rand.Int63, svcHandler)
+	svcHandler = middleware.InitTraceContext(svcHandler)
+	svcHandler = middleware.InstrumentHttpHandler(svcHandler)
+	svcHandler = middleware.Timeout(29*time.Second, svcHandler)
 	svcServer := httpServer(svcHandler, c.String("service-addr"))
 
 	log.Println("starting admin server")

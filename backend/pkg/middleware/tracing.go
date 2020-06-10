@@ -1,11 +1,11 @@
-package dinghy
+package middleware
 
 import (
 	"fmt"
 	"net/http"
 	"unsafe"
 
-	"github.com/opentracing/opentracing-go"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 )
 

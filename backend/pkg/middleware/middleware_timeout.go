@@ -1,4 +1,4 @@
-package dinghy
+package middleware
 
 import (
 	"context"
