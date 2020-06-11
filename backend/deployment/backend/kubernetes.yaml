@@ -17,12 +17,14 @@ spec:
       - name: backend
         image: backend-image
         ports:
-          - containerPort: 8080
-          - containerPort: 9090
+          - name: service
+            containerPort: 8080
+          - name: admin
+            containerPort: 8090
         readinessProbe:
           httpGet:
             path: /healthz
-            port: 9090
+            port: 8090
 ---
 apiVersion: v1
 kind: Service
@@ -32,6 +34,7 @@ spec:
   selector:
     app: backend
   ports:
-    - protocol: TCP
+    - name: http
       port: 8080
-      targetPort: 8080
+    - name: admin
+      port: 8090

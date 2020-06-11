@@ -31,7 +31,7 @@ func main() {
 		Usage: "make an explosive entrance",
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "service-addr", Value: ":8080", Usage: "Address for user service."},
-			&cli.StringFlag{Name: "admin-addr", Value: ":9090", Usage: "Address for administration service."},
+			&cli.StringFlag{Name: "admin-addr", Value: ":8090", Usage: "Address for administration service."},
 			&cli.StringFlag{Name: "s3-endpoint", Required: true, Usage: "s3 endpoint."},
 			&cli.StringFlag{Name: "s3-access-key", Required: true, Usage: "s3 access key."},
 			&cli.StringFlag{Name: "s3-secret-access-key-file", Required: true, Usage: "Path to s3 secret access key."},
