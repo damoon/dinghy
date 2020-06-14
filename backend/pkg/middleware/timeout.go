@@ -8,6 +8,12 @@ import (
 
 func Timeout(timeout time.Duration, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if IsWebsocket(r) {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		ctx, cancel := context.WithTimeout(r.Context(), timeout)
 		defer cancel()
 
@@ -27,4 +33,9 @@ func Timeout(timeout time.Duration, next http.Handler) http.Handler {
 		case <-done:
 		}
 	})
+}
+
+func IsWebsocket(r *http.Request) bool {
+	return (r.Header.Get("Connection") == "Upgrade" &&
+		r.Header.Get("Upgrade") == "websocket")
 }

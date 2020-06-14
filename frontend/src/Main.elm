@@ -2,18 +2,86 @@ module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
-import Html exposing (text, img, h1, div, Html, br, h2, a, span)
-import Html.Attributes exposing (class, id, style, src, href)
-import Http
-import Json.Decode exposing (Decoder, field, string, int, list, map, map3, map5, maybe)
+import Cmd.Extra exposing (withCmd, withCmds, withNoCmd)
+import Html exposing (Html, a, span, text, img, h1, div, br, h2)
+import Html.Attributes exposing (href, style, class, id, src, width, height)
+import Json.Decode as JD exposing (decodeString, Decoder, field, string, int, list, map, map3, map5, maybe)
+import Json.Encode exposing (Value)
+import PortFunnel.WebSocket as WebSocket exposing (Response(..))
+import PortFunnels exposing (FunnelDict, Handler(..), State)
 import Url
 import List exposing (concat)
 import Process
 import Task
 import String
-import Time
 
-main : Program String Model Msg
+
+handlers : List (Handler Model Msg)
+handlers =
+    [ WebSocketHandler socketHandler
+    ]
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    PortFunnels.subscriptions Process model
+
+
+funnelDict : FunnelDict Model Msg
+funnelDict =
+    PortFunnels.makeFunnelDict handlers getCmdPort
+
+
+getCmdPort : String -> Model -> (Value -> Cmd Msg)
+getCmdPort moduleName _ =
+    PortFunnels.getCmdPort Process moduleName False
+
+
+-- MODEL
+
+type alias Config =
+    { backend : String
+    , websocket : String
+    }
+
+type alias Model =
+    { endpoint : String
+    , wasLoaded : Bool
+    , state : State
+    , key : String
+    , error : Maybe String
+    , nav : Nav.Key
+    , url : Url.Url
+    , dir : Maybe Directory
+    , fetching : Fetching
+    , backend : String
+    }
+
+
+type alias Directory =
+  { path        : String
+  , directories : List String
+  , files       : List File
+  }
+
+
+type alias File =
+  { name : String
+  , size : Int
+  , downloadURL : String
+  , icon : String
+  , thumbnail : Maybe String
+  }
+
+
+type Fetching
+  = Loading
+  | LoadingSlowly
+  | Loaded
+  | Failed String
+
+
+main : Program Config Model Msg
 main =
   Browser.application
     { init = init
@@ -24,59 +92,55 @@ main =
     , onUrlRequest = LinkClicked
     }
 
-type alias Model =
-  { key : Nav.Key
-  , url : Url.Url
-  , dir : Maybe Directory
-  , fetching : Fetching
-  , backend : String
-  }
-  
-type Fetching
-  = Loading
-  | LoadingSlowly
-  | Loaded
-  | Failed String
+
+delay : Float -> msg -> Cmd msg
+delay time msg =
+    Process.sleep time
+        |> Task.perform (\_ -> msg)
 
 
-init : String -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
-init backend url key =
-  ( Model key url Nothing Loading backend
-  , Cmd.batch [ fetchDirectory backend url.path
-              , delay 500 (LoadingIsSlow url.path)
-              ]
-  )
+init : Config -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
+init cfg url key =
+    let
+        model = { endpoint = cfg.websocket
+                , backend = cfg.backend
+                , wasLoaded = False
+                , state = PortFunnels.initialState
+                , key = "socket"
+                , error = Nothing
+                , url = url
+                , nav = key
+                , dir = Nothing
+                , fetching = Loading
+                }
+    in
+        model
+        |> withCmd (delay 0 Startup)
 
 
 -- UPDATE
 
 
 type Msg
-  = LoadingIsSlow String
-  | GotGif (Result Http.Error Directory)
+  = Startup
+  | LoadingIsSlow String
   | LinkClicked Browser.UrlRequest
   | UrlChanged Url.Url
-  | Tick Time.Posix
+  | Process Value
 
-delay : Float -> msg -> Cmd msg
-delay time msg =
-  Process.sleep time
-  |> Task.perform (\_ -> msg)
 
-update : Msg -> Model -> (Model, Cmd Msg)
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-  case msg of
+    case msg of
 
-    Tick _ ->
-      case model.fetching of
-        Loading ->
-          ( model, Cmd.none )
-        LoadingSlowly ->
-          ( model, Cmd.none )
-        _ ->
-          ( { model | fetching = Loading }
-          , Cmd.batch [ fetchDirectory model.backend model.url.path
-                      , delay 500 (LoadingIsSlow model.url.path) ] )
+    Startup ->
+        model
+        |> withCmd (
+            if model.wasLoaded then
+                WebSocket.makeOpenWithKey model.key model.endpoint |> send model
+            else
+                delay 10 Startup
+        )
 
     LoadingIsSlow path ->
       case model.fetching of
@@ -89,22 +153,11 @@ update msg model =
         _ ->
           ( model, Cmd.none )
 
-
-    GotGif result ->
-      case result of
-        Ok dir ->
-          ( { model | fetching = Loaded, dir = Just dir }
-          , Cmd.none )
-
-        Err txt ->
-          ( { model | fetching = Failed (errorToString txt) }
-          , Cmd.none )
-
     LinkClicked urlRequest ->
       case urlRequest of
         Browser.Internal url ->
           ( model
-          , Nav.pushUrl model.key (Url.toString url) )
+          , Nav.pushUrl model.nav (Url.toString url) )
 
         Browser.External href ->
           ( model
@@ -114,39 +167,100 @@ update msg model =
       if url.path == model.url.path then
         ( model, Cmd.none )
       else
-        ( { model | url = url, fetching = Loading }
-        , Cmd.batch [ fetchDirectory model.backend url.path
-                    , delay 500 (LoadingIsSlow url.path)
-                    ]
-        )
+        let
+            mdl = { model | url = url, fetching = Loading }
+        in
+            mdl
+            |> withCmds [ WebSocket.makeSend mdl.key mdl.url.path |> send mdl
+                        , delay 500 (LoadingIsSlow mdl.url.path)
+                        ]
 
-errorToString : Http.Error -> String
-errorToString err =
-    case err of
-        Http.Timeout ->
-            "Timeout exceeded"
-
-        Http.NetworkError ->
-            "Network error"
-
-        Http.BadStatus num ->
-            "Http Status: " ++ String.fromInt num
-
-        Http.BadBody text ->
-            "Unexpected response from api: " ++ text
-
-        Http.BadUrl url ->
-            "Malformed url: " ++ url
-
--- SUBSCRIPTIONS
+    Process value ->
+        case
+            PortFunnels.processValue funnelDict value model.state model
+        of
+            Err error ->
+                { model | error = Just error } |> withNoCmd
+            Ok res ->
+                res
 
 
-subscriptions : Model -> Sub Msg
-subscriptions _ =
-  Time.every 1000 Tick
+send : Model -> WebSocket.Message -> Cmd Msg
+send model message =
+    WebSocket.send (getCmdPort WebSocket.moduleName model) message
+
+
+doIsLoaded : Model -> Model
+doIsLoaded model =
+    if not model.wasLoaded && WebSocket.isLoaded model.state.websocket then
+        { model
+            | wasLoaded = True
+        }
+
+    else
+        model
+
+
+socketHandler : Response -> State -> Model -> ( Model, Cmd Msg )
+socketHandler response state mdl =
+    let
+        model =
+            doIsLoaded
+                { mdl
+                    | state = state
+                    , error = Nothing
+                }
+    in
+    case response of
+        WebSocket.MessageReceivedResponse { message } ->
+            let
+                result = decodeString directoryDecoder message
+            in
+            case result of
+                Ok dir ->
+                    { model | fetching = Loaded, dir = Just dir }
+                        |> withNoCmd
+                Err txt ->
+                    { model | fetching = Failed (JD.errorToString txt) }
+                        |> withNoCmd
+
+        WebSocket.ConnectedResponse _ ->
+            model
+            |> withCmds [ WebSocket.makeSend model.key model.url.path |> send model
+                        , delay 500 (LoadingIsSlow model.url.path)
+                        ]
+
+        WebSocket.ClosedResponse _ ->
+            model
+                |> withNoCmd
+
+        WebSocket.ErrorResponse error ->
+            { model | error = Just (WebSocket.errorToString error) }
+                |> withNoCmd
+
+        _ ->
+            case WebSocket.reconnectedResponses response of
+                [] ->
+                    model |> withNoCmd
+
+                [ ReconnectedResponse _ ] ->
+                    model
+                        |> withCmds [ WebSocket.makeSend model.key model.url.path |> send model
+                                    , delay 500 (LoadingIsSlow model.url.path)
+                                    ]
+
+                list ->
+                    { model | error = Just (Debug.toString list) }
+                        |> withNoCmd
 
 
 -- VIEW
+
+
+br : Html msg
+br =
+    Html.br [] []
+
 
 view : Model -> Browser.Document Msg
 view model =
@@ -161,7 +275,7 @@ view model =
   , body =
       [ div []
           [ h1 []
-              [ img [ src "/favicon.png" ] []
+              [ img [ src "/favicon.png", width 32, height 32 ] []
               , text "Dinghy"
               ]
           , viewFetching model.fetching
@@ -200,11 +314,12 @@ viewDirectory backend maybeDir =
       div [ ]
       (concat
         [ [ h2 [] (navigation dir.path)
-          , br [] []
+          , br
           ]
         , List.map viewFolder dir.directories
         , List.map (viewFile backend) dir.files
         ])
+
 
 navigation : String -> List (Html Msg)
 navigation path =
@@ -216,6 +331,7 @@ navigation path =
     [ [ a [ href "/" ] [ text "Root" ] ]
     , links
     ]
+
 
 navigationElements : String -> List String -> List (Html Msg)
 navigationElements previous elements =
@@ -262,11 +378,12 @@ viewFolder name =
           , style "margin" "3px"
           ]
           []
-        , br [] []
+        , br
         , text name
         ]
       ]
     ]
+
 
 viewFile : String -> File -> Html Msg
 viewFile backend fi =
@@ -280,6 +397,7 @@ viewFile backend fi =
       ]
     ]
 
+
 viewIcon : String -> File -> List (Html msg)
 viewIcon backend fi =
   case fi.thumbnail of
@@ -291,7 +409,7 @@ viewIcon backend fi =
         , style "margin" "3px"
         ]
         []
-      , br [] []
+      , br
       , text fi.name
       ]
     Just url ->
@@ -312,23 +430,9 @@ viewIcon backend fi =
         ]
       , text fi.name
       ]
--- HTTP
 
 
-fetchDirectory : String -> String -> Cmd Msg
-fetchDirectory backend path =
-  Http.request
-    { method = "GET"
-    , url = backend ++ path
-    , body = Http.emptyBody
-    , headers = [
-      Http.header "Accept" "application/json;q=0.9"
-    ]
-    , expect = Http.expectJson GotGif directoryDecoder
-    , timeout = Just 5000
-    , tracker = Nothing
-    }
-
+-- Decode
 
 directoryDecoder : Decoder Directory
 directoryDecoder =
@@ -337,23 +441,10 @@ directoryDecoder =
         (field "Directories" directoriesDecoder)
         (field "Files" filesDecoder)
 
-type alias Directory =
-  { path        : String
-  , directories : List String
-  , files       : List File
-  }
-
-type alias File =
-  { name : String
-  , size : Int
-  , downloadURL : String
-  , icon : String
-  , thumbnail : Maybe String
-  }
 
 directoriesDecoder : Decoder (List String)
 directoriesDecoder =
-  Json.Decode.list string
+  JD.list string
 
 filesDecoder : Decoder (List File)
 filesDecoder =

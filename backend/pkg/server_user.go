@@ -3,17 +3,32 @@ package dinghy
 import (
 	"log"
 	"net/http"
+
+	"github.com/gorilla/websocket"
 )
 
 // ServiceServer executes the users requests.
 type ServiceServer struct {
 	Storage     ObjectStore
 	FrontendURL string
+	upgrader    websocket.Upgrader
 }
 
 // NewServiceServer creates a new service server and initiates the routes.
 func NewServiceServer() *ServiceServer {
 	srv := &ServiceServer{}
+	srv.upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
+	srv.upgrader.CheckOrigin = func(r *http.Request) bool {
+		if r.Header.Get("Origin") != srv.FrontendURL {
+			return false
+		}
+
+		return true
+	}
+
 	return srv
 }
 

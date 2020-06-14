@@ -14,6 +14,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"gitlab.com/davedamoon/dinghy/backend/pkg/middleware"
 )
 
 type ObjectStore interface {
@@ -28,6 +30,11 @@ type ObjectStore interface {
 func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	ctx := r.Context()
+
+	if middleware.IsWebsocket(r) {
+		s.serveWs(w, r)
+		return
+	}
 
 	found, etag, contentType, err := s.Storage.exists(ctx, filesDirectory+path)
 	if err != nil {
