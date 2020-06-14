@@ -219,6 +219,8 @@ func (s *ServiceServer) receiveFile(ctx context.Context, path string, r *http.Re
 		return fmt.Errorf("upload: %v", err)
 	}
 
+	notify <- nil
+
 	return nil
 }
 

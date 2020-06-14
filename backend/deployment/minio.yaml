@@ -36,6 +36,24 @@ spec:
               value: minio
             - name: MINIO_SECRET_KEY
               value: minio123
+#            - name: MINIO_NOTIFY_REDIS_ENABLE
+#              value: "on"
+#            - name: MINIO_NOTIFY_REDIS_ADDRESS
+#              value: redis:6379
+#            - name: MINIO_NOTIFY_REDIS_KEY
+#              value: bucketevents
+#            - name: MINIO_NOTIFY_REDIS_PASSWORD
+#              value: redis123
+#            - name: MINIO_NOTIFY_REDIS_QUEUE_DIR
+#              value: /queue
+            - name: MINIO_NOTIFY_WEBHOOK_ENABLE
+              value: "on"
+            - name: MINIO_NOTIFY_WEBHOOK_ENDPOINT
+              value: http://backend:8080/?webhook
+            - name: MINIO_NOTIFY_WEBHOOK_AUTH_TOKEN
+              value: auth_token_value
+            - name: MINIO_NOTIFY_WEBHOOK_QUEUE_DIR
+              value: /queue
           ports:
             - name: http
               containerPort: 9000
@@ -60,10 +78,15 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /home/shared  
+            - name: queue
+              mountPath: /queue
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: minio
+        - name: queue
+          persistentVolumeClaim:
+            claimName: minio-notification-queue
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -75,3 +98,14 @@ spec:
   resources:
     requests:
       storage: 3Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-notification-queue
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

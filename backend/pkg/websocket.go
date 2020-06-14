@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"reflect"
 	"time"
 
+	//	"github.com/go-redis/redis"
 	"github.com/gorilla/websocket"
 )
 
@@ -60,6 +62,7 @@ func (s ServiceServer) writer(ws *websocket.Conn, msg <-chan []byte) {
 	pingTicker := time.NewTicker(pingPeriod)
 	fileTicker := time.NewTicker(refreshPeriod)
 	m := []byte{}
+	var previous *Directory
 
 	defer func() {
 		pingTicker.Stop()
@@ -70,20 +73,35 @@ func (s ServiceServer) writer(ws *websocket.Conn, msg <-chan []byte) {
 	for {
 		select {
 		case m = <-msg:
-			err := s.sendUpdate(ws, string(m))
+			cur, err := s.sendUpdate(ws, nil, string(m))
 			if err != nil {
 				log.Println(err)
 				return
 			}
 
-		case <-fileTicker.C:
-			if len(m) != 0 {
-				err := s.sendUpdate(ws, string(m))
-				if err != nil {
-					log.Println(err)
-					return
-				}
+			previous = cur
+
+		//		case <-fileTicker.C:
+		case <-notify:
+			if len(m) == 0 {
+				continue
 			}
+
+			// TODO failed notify connection should trigger reload
+
+			//			client := redis.NewClient(&redis.Options{
+			//				Addr:     "redis:6379",
+			//				Password: "redis123",
+			//			})
+			//			defer client.Close()
+			log.Println("notify")
+			cur, err := s.sendUpdate(ws, previous, string(m))
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			previous = cur
 
 		case <-pingTicker.C:
 			ws.SetWriteDeadline(time.Now().Add(writeWait))
@@ -95,21 +113,24 @@ func (s ServiceServer) writer(ws *websocket.Conn, msg <-chan []byte) {
 	}
 }
 
-func (s ServiceServer) sendUpdate(ws *websocket.Conn, path string) error {
-	ws.SetWriteDeadline(time.Now().Add(writeWait))
-
+func (s ServiceServer) sendUpdate(ws *websocket.Conn, previous *Directory, path string) (*Directory, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	l, err := s.Storage.list(ctx, path)
+	listing, err := s.Storage.list(ctx, path)
 	if err != nil {
-		return fmt.Errorf("list %s: %v", path, err)
+		return nil, fmt.Errorf("list %s: %v", path, err)
+	}
+
+	if reflect.DeepEqual(previous, &listing) {
+		return &listing, nil
 	}
 
 	// TODO: check and ignore closed
-	if err := ws.WriteJSON(l); err != nil {
-		return fmt.Errorf("respond to websocket: %v", err)
+	ws.SetWriteDeadline(time.Now().Add(writeWait))
+	if err := ws.WriteJSON(listing); err != nil {
+		return nil, fmt.Errorf("respond to websocket: %v", err)
 	}
 
-	return nil
+	return &listing, nil
 }

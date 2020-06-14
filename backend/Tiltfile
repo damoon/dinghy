@@ -21,6 +21,7 @@ k8s_resource(
   resource_deps=['create-s3-bucket'],
 )
 
+
 k8s_yaml('deployment/integration-tests/tests.yaml')
 docker_build(
   'integration-tests-image',
@@ -53,8 +54,14 @@ k8s_resource(
   resource_deps=['minio'],
 )
 
+
+k8s_yaml('deployment/redis.yaml')
+k8s_resource('redis', port_forwards=6379)
+
+
 k8s_yaml('deployment/jaeger.yaml')
 k8s_resource('jaeger', port_forwards=['16686'])
+
 
 k8s_yaml('deployment/prometheus.yaml')
 k8s_resource('prometheus', port_forwards=['9090'])

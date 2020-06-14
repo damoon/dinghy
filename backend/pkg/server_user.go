@@ -38,6 +38,8 @@ func (s *ServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	case http.MethodGet:
 		s.get(w, r)
+	case http.MethodPost:
+		s.post(w, r)
 	case http.MethodPut:
 		s.put(w, r)
 	case http.MethodDelete:
