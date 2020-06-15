@@ -18,6 +18,7 @@ spec:
               set -euxo pipefail
               mc config host add minio http://minio:9000 minio minio123
               mc mb minio/dinghy --ignore-existing
+              mc event add minio/dinghy arn:minio:sqs::_:webhook --ignore-existing
           resources:
             limits:
               cpu: 20m

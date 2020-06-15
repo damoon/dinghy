@@ -55,10 +55,6 @@ k8s_resource(
 )
 
 
-k8s_yaml('deployment/redis.yaml')
-k8s_resource('redis', port_forwards=6379)
-
-
 k8s_yaml('deployment/jaeger.yaml')
 k8s_resource('jaeger', port_forwards=['16686'])
 

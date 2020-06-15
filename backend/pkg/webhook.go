@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	//	"github.com/coreos/etcd/clientv3"
 )
 
 var notify = make(chan interface{})
@@ -43,6 +44,23 @@ func notifyWebsocket(w http.ResponseWriter, r *http.Request) {
 
 	//	log.Println(notification.EventName)
 	//log.Println(string(bodyBuffer))
-
 	notify <- nil
+	//	notify()
 }
+
+//func notify(path, event string) {
+//	// TODO set keep alive checks & timeouts
+//	cli, err := clientv3.New(clientv3.Config{
+//		Endpoints:   []string{"etcd:2379"},
+//		DialTimeout: 1 * time.Second,
+//	})
+//	if err != nil {
+//		// handle error!
+//	}
+//	defer cli.Close()
+//
+//	_, err := cli.Put(context.Backgroun(), path, event)
+//	if err != nil {
+//		// handle error!
+//	}
+//}
