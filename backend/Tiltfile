@@ -43,21 +43,3 @@ docker_build(
   dockerfile='deployment/unit-tests/Dockerfile',
   only=['go.mod', 'go.sum', 'pkg', 'cmd', 'deployment/backend'],
 )
-
-
-k8s_yaml('deployment/minio.yaml')
-k8s_resource('minio', port_forwards=9000)
-
-k8s_yaml('deployment/create-bucket.yaml')
-k8s_resource(
-  'create-s3-bucket',
-  resource_deps=['minio'],
-)
-
-
-k8s_yaml('deployment/jaeger.yaml')
-k8s_resource('jaeger', port_forwards=['16686'])
-
-
-k8s_yaml('deployment/prometheus.yaml')
-k8s_resource('prometheus', port_forwards=['9090'])
