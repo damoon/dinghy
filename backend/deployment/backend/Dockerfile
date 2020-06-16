@@ -5,12 +5,12 @@ WORKDIR /app
 RUN apt-get update
 RUN apt-get install -y entr
 
-COPY go.mod /app
-COPY go.sum /app
+COPY backend/go.mod /app
+COPY backend/go.sum /app
 RUN go mod download
 
-COPY cmd /app/cmd
-COPY pkg /app/pkg
+COPY backend/cmd /app/cmd
+COPY backend/pkg /app/pkg
 RUN go install ./cmd/backend
 
 RUN mkdir /secret
@@ -28,9 +28,5 @@ CMD find "/go/bin/backend" | entr -d -r backend --s3-endpoint=minio:9000 --s3-ac
 
 # ARTIFACT ####################################################
 FROM alpine AS deploy
-ENV ENVIRONMENT production
-WORKDIR /app
-
 COPY --from=workbench /go/bin/backend /backend
-
 ENTRYPOINT [ "/backend" ]

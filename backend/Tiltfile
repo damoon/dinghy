@@ -2,16 +2,20 @@
 k8s_yaml('deployment/backend/kubernetes.yaml')
 docker_build(
   'backend-image',
-  '.',
+  '..',
   dockerfile='deployment/backend/Dockerfile',
   target='workbench',
-  only=['go.mod', 'go.sum', 'pkg', 'cmd', 'deployment/backend'],
-  ignore=['*/*_test.go'],
+  only=[ 'backend/go.mod'
+       , 'backend/go.sum'
+       , 'backend/pkg'
+       , 'backend/cmd'
+       , 'backend/deployment/backend'],
+  ignore=['backend/*/*_test.go'],
   live_update=[
-    sync('pkg', '/app/pkg'),
-    sync('cmd', '/app/cmd'),
-    sync('go.mod', '/app/go.mod'),
-    sync('go.sum', '/app/go.sum'),
+    sync('backend/pkg',    '/app/pkg'),
+    sync('backend/cmd',    '/app/cmd'),
+    sync('backend/go.mod', '/app/go.mod'),
+    sync('backend/go.sum', '/app/go.sum'),
     run('cd /app && go install ./cmd/backend'),
   ],
 )
@@ -39,7 +43,11 @@ k8s_resource(
 k8s_yaml('deployment/unit-tests/tests.yaml')
 docker_build(
   'unit-tests-image',
-  '.',
+  '..',
   dockerfile='deployment/unit-tests/Dockerfile',
-  only=['go.mod', 'go.sum', 'pkg', 'cmd', 'deployment/backend'],
+  only=[ 'backend/go.mod'
+       , 'backend/go.sum'
+       , 'backend/pkg'
+       , 'backend/cmd'
+       , 'backend/deployment/backend'],
 )

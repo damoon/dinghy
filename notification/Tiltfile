@@ -1,0 +1,5 @@
+
+local_resource('proto',
+    cmd='go generate ./pkg',
+    deps=['service.proto'],
+)
