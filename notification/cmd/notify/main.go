@@ -32,13 +32,6 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "service-addr", Value: ":8080", Usage: "Address for user service."},
 			&cli.StringFlag{Name: "admin-addr", Value: ":8090", Usage: "Address for administration service."},
-			&cli.StringFlag{Name: "s3-endpoint", Required: true, Usage: "s3 endpoint."},
-			&cli.StringFlag{Name: "s3-access-key", Required: true, Usage: "s3 access key."},
-			&cli.StringFlag{Name: "s3-secret-access-key-file", Required: true, Usage: "Path to s3 secret access key."},
-			&cli.BoolFlag{Name: "s3-ssl", Value: true, Usage: "s3 uses SSL."},
-			&cli.StringFlag{Name: "s3-location", Value: "us-east-1", Usage: "s3 bucket location."},
-			&cli.StringFlag{Name: "s3-bucket", Required: true, Usage: "s3 bucket name."},
-			&cli.StringFlag{Name: "frontend-url", Required: true, Usage: "Frontend domain for CORS and redirects."},
 		},
 		Action: run,
 	}
@@ -55,7 +48,7 @@ func main() {
 func run(c *cli.Context) error {
 	log.Println("set up tracing")
 
-	jaeger, err := setupJaeger()
+	err, jaeger := setupJaeger()
 	if err != nil {
 		return fmt.Errorf("setup minio s3 client: %v", err)
 	}

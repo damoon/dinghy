@@ -3,3 +3,12 @@ local_resource('proto',
     cmd='go generate ./pkg',
     deps=['service.proto'],
 )
+
+
+## define your hello-world resource: k8s yaml + a Docker build
+#k8s_yaml('hello-world.yaml')
+#docker_build('hello-world', '.',
+#    ignore='helloworld.proto',  # let the local_resource handle these changes
+#    live_update=[ sync('.', '/app') ]
+#)
+
