@@ -1,23 +1,18 @@
 # WORKBENCH ###################################################
 FROM golang:1.14.1 AS workbench
-#WORKDIR /app
-WORKDIR /go/src/gitlab.com/davedamoon/dinghy/backend
+WORKDIR /go/src/gitlab.com/davedamoon/dinghy
 
 RUN apt-get update
 RUN apt-get install -y entr
 
-COPY backend/go.mod .
-COPY backend/go.sum .
+COPY go.mod .
+COPY go.sum .
 RUN go mod download
 
-RUN mkdir -p /go/src/gitlab.com/davedamoon/dinghy/notify
-COPY notify/go.mod /go/src/gitlab.com/davedamoon/dinghy/notify
-COPY notify/go.sum /go/src/gitlab.com/davedamoon/dinghy/notify
-COPY notify/pkg    /go/src/gitlab.com/davedamoon/dinghy/notify/pkg
-
-COPY backend/cmd ./cmd
-COPY backend/pkg ./pkg
-RUN go install ./cmd/backend
+COPY notify/pkg/pb    /go/src/gitlab.com/davedamoon/dinghy/notify/pkg/pb
+COPY backend/cmd backend/cmd
+COPY backend/pkg backend/pkg
+RUN go build -o /go/bin/backend ./backend/cmd/backend
 
 RUN mkdir /secret
 RUN echo "minio123" > /secret/minio

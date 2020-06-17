@@ -1,14 +1,14 @@
 # WORKBENCH ###################################################
 FROM golang:1.14.1
 
-RUN mkdir /app
-WORKDIR /app
+WORKDIR /go/src/gitlab.com/davedamoon/dinghy
 
-COPY backend/go.mod /app
-COPY backend/go.sum /app
+COPY go.mod .
+COPY go.sum .
 RUN go mod download
 
-COPY backend/cmd /app/cmd
-COPY backend/pkg /app/pkg
+COPY notify/pkg/pb    /go/src/gitlab.com/davedamoon/dinghy/notify/pkg/pb
+COPY backend/cmd backend/cmd
+COPY backend/pkg backend/pkg
 
-CMD go test ./... && echo "done"
+CMD go test ./backend/... && echo "done"

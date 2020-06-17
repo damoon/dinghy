@@ -5,15 +5,13 @@ docker_build(
   '..',
   dockerfile='deployment/backend/Dockerfile',
   target='workbench',
-  only=[ 'backend/go.mod'
-       , 'backend/go.sum'
+  only=[ 'go.mod'
+       , 'go.sum'
        , 'backend/pkg'
        , 'backend/cmd'
        , 'backend/deployment/backend'
-       , 'notify/go.mod'
-       , 'notify/go.sum'
-       , 'notify/pkg'
-],
+       , 'notify/pkg/pb'
+  ],
   ignore=['backend/*/*_test.go'],
   live_update=[
     sync('backend/pkg',    '/go/src/gitlab.com/davedamoon/dinghy/backend/pkg'),
@@ -23,6 +21,7 @@ docker_build(
     sync('notify/pkg',     '/go/src/gitlab.com/davedamoon/dinghy/notify/pkg'),
     sync('notify/go.mod',  '/go/src/gitlab.com/davedamoon/dinghy/notify/go.mod'),
     sync('notify/go.sum',  '/go/src/gitlab.com/davedamoon/dinghy/notify/go.sum'),
+    sync('go.mod',         '/go/src/gitlab.com/davedamoon/dinghy/go.mod'),
     run('go install ./cmd/backend'),
   ],
 )
@@ -52,9 +51,11 @@ docker_build(
   'unit-tests-image',
   '..',
   dockerfile='deployment/unit-tests/Dockerfile',
-  only=[ 'backend/go.mod'
-       , 'backend/go.sum'
+  only=[ 'go.mod'
+       , 'go.sum'
        , 'backend/pkg'
        , 'backend/cmd'
-       , 'backend/deployment/backend'],
+       , 'backend/deployment/backend'
+       , 'notify/pkg/pb'
+  ],
 )
