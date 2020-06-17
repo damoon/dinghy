@@ -53,7 +53,7 @@ func main() {
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-		r, err := c.Listen(ctx, &pb.Request{Name: name})
+		r, err := c.Notify(ctx, &pb.Request{Name: name})
 		if err != nil {
 			if failCount < 3 {
 				failCount++

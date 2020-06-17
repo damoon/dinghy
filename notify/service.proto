@@ -3,15 +3,16 @@ syntax = "proto3";
 //option go_package = "gitlab.com/davemoon/dighy/pb";
 package pb;
 
-service Greeter {
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
+service Notifier {
+  rpc Listen (Request) returns (Response) {}
+  rpc Notify (Request) returns (Response) {}
 }
 
-message HelloRequest {
+message Request {
   string name = 1;
 }
 
-message HelloReply {
+message Response {
   string message = 1;
 }
 

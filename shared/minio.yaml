@@ -39,7 +39,7 @@ spec:
             - name: MINIO_NOTIFY_WEBHOOK_ENABLE
               value: "on"
             - name: MINIO_NOTIFY_WEBHOOK_ENDPOINT
-              value: http://backend:8080/?webhook
+              value: http://notify:8080/webhook
             - name: MINIO_NOTIFY_WEBHOOK_AUTH_TOKEN
               value: auth_token_value
             - name: MINIO_NOTIFY_WEBHOOK_QUEUE_DIR

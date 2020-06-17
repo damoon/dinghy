@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -27,7 +29,8 @@ func main() {
 		Name:  "notify",
 		Usage: "Propagate calls to a http hook towards GRPC clients.",
 		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "addr", Value: ":4080", Usage: "Address for server."},
+			&cli.StringFlag{Name: "http", Value: ":8080", Usage: "Address for server."},
+			&cli.StringFlag{Name: "grpc", Value: ":50051", Usage: "Address for server."},
 		},
 		Action: run,
 	}
@@ -50,21 +53,32 @@ func run(c *cli.Context) error {
 	}
 	defer jaeger.Close()
 
-	grpcServer := grpc.NewServer()
-	pb.RegisterGreeterServer(grpcServer, &notify.GRPCServer{})
-	reflection.Register(grpcServer)
+	m := sync.Mutex{}
+	cond := sync.NewCond(&m)
+
+	grpcServce := &notify.GRPCServer{}
+	grpcServce.C = cond
 
 	httpSrv := notify.NewServer()
+	httpSrv.C = cond
 	//svcHandler := middleware.RequestID(rand.Int63, httpServer)
 	//svcHandler = middleware.InitTraceContext(svcHandler)
 	//svcHandler = middleware.InstrumentHttpHandler(svcHandler)
 	//svcHandler = middleware.Timeout(29*time.Second, svcHandler)
 
-	svcServer := httpServer(grpcHTTPSwitch(grpcServer, httpSrv), c.String("addr"))
+	grpcS := grpc.NewServer()
+	pb.RegisterNotifierServer(grpcS, grpcServce)
+	reflection.Register(grpcS)
 
-	log.Println("starting server")
+	httpS := httpServer(httpSrv, c.String("http"))
 
-	go mustListenAndServe(svcServer)
+	log.Println("starting grpc server")
+
+	go mustListenAndServeGRPC(grpcS, c.String("grpc"))
+
+	log.Println("starting http server")
+
+	go mustListenAndServeHTTP(httpS)
 
 	log.Println("running")
 
@@ -73,26 +87,14 @@ func run(c *cli.Context) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	err = svcServer.Shutdown(ctx)
+	err = httpS.Shutdown(ctx)
 	if err != nil {
 		return fmt.Errorf("shutdown server: %v", err)
 	}
 
-	grpcServer.Stop()
+	grpcS.Stop()
 
 	return nil
-}
-
-func grpcHTTPSwitch(g *grpc.Server, h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("http version: %d, ct: %v", r.ProtoMajor, r.Header)
-		if r.ProtoMajor == 2 { //&& strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
-			g.ServeHTTP(w, r)
-			return
-		}
-
-		h.ServeHTTP(w, r)
-	})
 }
 
 func setupJaeger() (io.Closer, error) {
@@ -122,10 +124,21 @@ func httpServer(h http.Handler, addr string) *http.Server {
 	return httpServer
 }
 
-func mustListenAndServe(srv *http.Server) {
+func mustListenAndServeHTTP(srv *http.Server) {
 	err := srv.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		log.Fatal(err)
+	}
+}
+
+func mustListenAndServeGRPC(s *grpc.Server, addr string) {
+	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
 	}
 }
 

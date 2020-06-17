@@ -9,14 +9,21 @@ docker_build(
        , 'backend/go.sum'
        , 'backend/pkg'
        , 'backend/cmd'
-       , 'backend/deployment/backend'],
+       , 'backend/deployment/backend'
+       , 'notify/go.mod'
+       , 'notify/go.sum'
+       , 'notify/pkg'
+],
   ignore=['backend/*/*_test.go'],
   live_update=[
-    sync('backend/pkg',    '/app/pkg'),
-    sync('backend/cmd',    '/app/cmd'),
-    sync('backend/go.mod', '/app/go.mod'),
-    sync('backend/go.sum', '/app/go.sum'),
-    run('cd /app && go install ./cmd/backend'),
+    sync('backend/pkg',    '/go/src/gitlab.com/davedamoon/dinghy/backend/pkg'),
+    sync('backend/cmd',    '/go/src/gitlab.com/davedamoon/dinghy/backend/cmd'),
+    sync('backend/go.mod', '/go/src/gitlab.com/davedamoon/dinghy/backend/go.mod'),
+    sync('backend/go.sum', '/go/src/gitlab.com/davedamoon/dinghy/backend/go.sum'),
+    sync('notify/pkg',     '/go/src/gitlab.com/davedamoon/dinghy/notify/pkg'),
+    sync('notify/go.mod',  '/go/src/gitlab.com/davedamoon/dinghy/notify/go.mod'),
+    sync('notify/go.sum',  '/go/src/gitlab.com/davedamoon/dinghy/notify/go.sum'),
+    run('go install ./cmd/backend'),
   ],
 )
 k8s_resource(

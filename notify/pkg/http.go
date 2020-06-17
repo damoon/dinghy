@@ -3,16 +3,18 @@ package notify
 import (
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// Server handles http and grpc requests.
+// Server handles http requests.
 type Server struct {
 	router *http.ServeMux
+	C      *sync.Cond
 }
 
-// NewServer creates a new server.
+// NewServer creates a new http server.
 func NewServer() *Server {
 	srv := &Server{}
 	srv.routes()
@@ -32,13 +34,14 @@ func (s *Server) routes() {
 
 func (s *Server) handleHealthz() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// executing this means all is OK
-		log.Println("healthz")
 	}
 }
 
 func (s *Server) webhook() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println("webhook")
+		s.C.L.Lock()
+		s.C.Broadcast()
+		s.C.L.Unlock()
 	}
 }

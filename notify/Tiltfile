@@ -25,15 +25,15 @@ docker_build(
        , 'deployment/notify'],
   ignore=['*/*_test.go'],
   live_update=[
-    sync('pkg',    '/app/pkg'),
-    sync('cmd',    '/app/cmd'),
-    sync('go.mod', '/app/go.mod'),
-    sync('go.sum', '/app/go.sum'),
+    sync('pkg',        '/app/pkg'),
+    sync('cmd/notify', '/app/cmd/notify'),
+    sync('go.mod',     '/app/go.mod'),
+    sync('go.sum',     '/app/go.sum'),
     run('pwd'),
     run('go install ./cmd/notify/main.go'),
   ],
 )
 k8s_resource(
   'notify',
-  port_forwards=['4080'],
+  port_forwards=['4080:8080', '50051:50051'],
 )

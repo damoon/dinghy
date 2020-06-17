@@ -1,16 +1,22 @@
 # WORKBENCH ###################################################
 FROM golang:1.14.1 AS workbench
-WORKDIR /app
+#WORKDIR /app
+WORKDIR /go/src/gitlab.com/davedamoon/dinghy/backend
 
 RUN apt-get update
 RUN apt-get install -y entr
 
-COPY backend/go.mod /app
-COPY backend/go.sum /app
+COPY backend/go.mod .
+COPY backend/go.sum .
 RUN go mod download
 
-COPY backend/cmd /app/cmd
-COPY backend/pkg /app/pkg
+RUN mkdir -p /go/src/gitlab.com/davedamoon/dinghy/notify
+COPY notify/go.mod /go/src/gitlab.com/davedamoon/dinghy/notify
+COPY notify/go.sum /go/src/gitlab.com/davedamoon/dinghy/notify
+COPY notify/pkg    /go/src/gitlab.com/davedamoon/dinghy/notify/pkg
+
+COPY backend/cmd ./cmd
+COPY backend/pkg ./pkg
 RUN go install ./cmd/backend
 
 RUN mkdir /secret
