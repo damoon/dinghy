@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: notification
+  name: notify
   labels:
-    app: notification
+    app: notify
 spec:
   selector:
     matchLabels:
-      app: notification
+      app: notify
   template:
     metadata:
       labels:
-        app: notification
+        app: notify
     spec:
       containers:
-      - name: notification
-        image: notification-image
+      - name: notify
+        image: notify-image
         ports:
           - name: service
             containerPort: 4080
@@ -29,10 +29,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: notification
+  name: notify
 spec:
   selector:
-    app: notification
+    app: notify
   ports:
     - name: http
       port: 4080

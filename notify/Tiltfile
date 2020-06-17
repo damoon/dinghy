@@ -1,0 +1,39 @@
+
+local_resource('proto',
+    cmd='go generate ./pkg',
+    deps=['service.proto'],
+)
+
+
+## define your hello-world resource: k8s yaml + a Docker build
+#k8s_yaml('hello-world.yaml')
+#docker_build('hello-world', '.',
+#    ignore='helloworld.proto',  # let the local_resource handle these changes
+#    live_update=[ sync('.', '/app') ]
+#)
+
+k8s_yaml('deployment/notify/kubernetes.yaml')
+docker_build(
+  'notify-image',
+  '.',
+  dockerfile='deployment/notify/Dockerfile',
+  target='workbench',
+  only=[ 'go.mod'
+       , 'go.sum'
+       , 'pkg'
+       , 'cmd'
+       , 'deployment/notify'],
+  ignore=['*/*_test.go'],
+  live_update=[
+    sync('pkg',    '/app/pkg'),
+    sync('cmd',    '/app/cmd'),
+    sync('go.mod', '/app/go.mod'),
+    sync('go.sum', '/app/go.sum'),
+    run('pwd'),
+    run('go install ./cmd/notify/main.go'),
+  ],
+)
+k8s_resource(
+  'notify',
+  port_forwards=['4080'],
+)
