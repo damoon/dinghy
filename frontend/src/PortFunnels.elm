@@ -30,13 +30,12 @@ Note that this is a `port module`, and it defines the two ports that are used by
 -}
 
 import Dict exposing (Dict)
-import Html exposing (Html, a, button, div, h1, input, p, span, text)
-import Json.Encode as JE exposing (Value)
+import Json.Encode exposing (Value)
 import PortFunnel
     exposing
         ( FunnelSpec
         , GenericMessage
-        , ModuleDesc
+--        , ModuleDesc
         , StateAccessors
         )
 import PortFunnel.WebSocket as WebSocket
@@ -147,7 +146,7 @@ port subPort : (Value -> msg) -> Sub msg
 {-| Create a subscription for the `subPort`, given a Msg wrapper.
 -}
 subscriptions : (Value -> msg) -> model -> Sub msg
-subscriptions process model =
+subscriptions process _ =
     subPort process
 
 
