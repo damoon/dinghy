@@ -21,6 +21,8 @@ import (
 	notify "gitlab.com/davedamoon/dinghy/notify/pkg"
 	"gitlab.com/davedamoon/dinghy/notify/pkg/pb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -68,6 +70,7 @@ func run(c *cli.Context) error {
 
 	grpcS := grpc.NewServer()
 	pb.RegisterNotifierServer(grpcS, grpcServce)
+	grpc_health_v1.RegisterHealthServer(grpcS, health.NewServer())
 	reflection.Register(grpcS)
 
 	httpS := httpServer(httpSrv, c.String("http"))

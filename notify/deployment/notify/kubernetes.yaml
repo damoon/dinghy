@@ -21,10 +21,13 @@ spec:
             containerPort: 8080
           - name: grpc
             containerPort: 50051
-        readinessProbe:
+        lifenessProbe:
           httpGet:
-            path: /healthz
+            path: /metrics
             port: 8080
+        readinessProbe:
+          exec:
+            command: ["/bin/grpc_health_probe", "-addr=:50051"]
 ---
 apiVersion: v1
 kind: Service

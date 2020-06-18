@@ -5,6 +5,10 @@ WORKDIR /app
 RUN apt-get update
 RUN apt-get install -y entr
 
+RUN GRPC_HEALTH_PROBE_VERSION=v0.3.1 && \
+    wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 && \
+    chmod +x /bin/grpc_health_probe
+
 COPY go.mod .
 COPY go.sum .
 RUN go mod download
@@ -25,5 +29,8 @@ CMD find "/go/bin/notify" | entr -d -r notify
 
 # ARTIFACT ####################################################
 FROM alpine AS deploy
+RUN GRPC_HEALTH_PROBE_VERSION=v0.3.1 && \
+    wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 && \
+    chmod +x /bin/grpc_health_probe
 COPY --from=workbench /go/bin/notify /notify
 ENTRYPOINT [ "/notify" ]

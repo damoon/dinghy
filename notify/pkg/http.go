@@ -1,6 +1,9 @@
 package notify
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"sync"
@@ -40,8 +43,52 @@ func (s *Server) handleHealthz() http.HandlerFunc {
 func (s *Server) webhook() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println("webhook")
+		if !isValidMinioRequest(r) {
+			return
+		}
+
+		t, err := eventType(r.Body)
+		if err != nil {
+			log.Printf("get event type: %v", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if !meansChange(t) {
+			return
+		}
+
 		s.C.L.Lock()
 		s.C.Broadcast()
 		s.C.L.Unlock()
 	}
+}
+
+func isValidMinioRequest(r *http.Request) bool {
+	return r.Header.Get("Authorization") == "Bearer auth_token_value"
+}
+
+type MinioNotification struct {
+	EventName string
+}
+
+func eventType(r io.Reader) (string, error) {
+	notification := &MinioNotification{}
+	err := json.NewDecoder(r).Decode(notification)
+	if err != nil {
+		return "", fmt.Errorf("get event type: %v", err)
+	}
+
+	return notification.EventName, nil
+}
+
+func meansChange(event string) bool {
+	ss := []string{"s3:ObjectRemoved:Delete", "s3:ObjectCreated:Put", "s3:ObjectCreated:Copy"}
+	for _, s := range ss {
+		if event == s {
+			return true
+		}
+	}
+
+	return false
 }
