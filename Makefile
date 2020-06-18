@@ -15,3 +15,7 @@ unit-tests: ##@qa Run unit tests.
 .PHONY: tests
 tests-local: ##@qa Run unit and integration tests locally.
 	go test ./... -s3Endpoint=127.0.0.1:9000 -s3UseSSL=false -s3AccessID=minio -s3AccessKey=minio123 -s3Bucket=webdav-to-s3
+
+generate:
+	go generate ./backend/pkg
+	go generate ./notify/pkg

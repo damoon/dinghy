@@ -1,9 +1,4 @@
 
-local_resource('notify go generate',
-    cmd='go generate ./pkg',
-    deps=['service.proto'],
-)
-
 k8s_yaml('deployment/notify/kubernetes.yaml')
 docker_build(
   'notify-image',

@@ -1,9 +1,4 @@
 
-local_resource('backend go generate',
-    cmd='go generate ./pkg',
-    deps=['../notify/service.proto'],
-)
-
 k8s_yaml('deployment/backend/kubernetes.yaml')
 docker_build(
   'backend-image',
