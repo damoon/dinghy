@@ -9,15 +9,13 @@ import (
 	"reflect"
 	"time"
 
-	//	"github.com/go-redis/redis"
 	"github.com/gorilla/websocket"
 )
 
 const (
-	writeWait     = 10 * time.Second
-	pongWait      = 60 * time.Second
-	pingPeriod    = (pongWait * 9) / 10
-	refreshPeriod = 2 * time.Second
+	writeWait  = 10 * time.Second
+	pongWait   = 60 * time.Second
+	pingPeriod = (pongWait * 9) / 10
 )
 
 func (s ServiceServer) serveWs(w http.ResponseWriter, r *http.Request) {
@@ -41,19 +39,20 @@ func (s ServiceServer) serveWs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s ServiceServer) CheckOrigin(r *http.Request) bool {
-	if r.Header.Get("Origin") != s.FrontendURL {
-		return false
-	}
-
-	return true
+	return r.Header.Get("Origin") == s.FrontendURL
 }
 
 func reader(ws *websocket.Conn, msg chan<- []byte) {
 	ws.SetReadLimit(512)
-	ws.SetReadDeadline(time.Now().Add(pongWait))
+
+	err := ws.SetReadDeadline(time.Now().Add(pongWait))
+	if err != nil {
+		log.Printf("websocket reader: %v", err)
+		return
+	}
+
 	ws.SetPongHandler(func(string) error {
-		ws.SetReadDeadline(time.Now().Add(pongWait))
-		return nil
+		return ws.SetReadDeadline(time.Now().Add(pongWait))
 	})
 
 	for {
@@ -104,8 +103,14 @@ func (s ServiceServer) writer(ctx context.Context, ws *websocket.Conn, msg <-cha
 			previous = cur
 
 		case <-pingTicker.C:
-			ws.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+			err := ws.SetWriteDeadline(time.Now().Add(writeWait))
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			err = ws.WriteMessage(websocket.PingMessage, []byte{})
+			if err != nil {
 				log.Println(err)
 				return
 			}
@@ -126,8 +131,13 @@ func (s ServiceServer) sendUpdate(ws *websocket.Conn, previous *Directory, path 
 		return &listing, nil
 	}
 
-	ws.SetWriteDeadline(time.Now().Add(writeWait))
-	if err := ws.WriteJSON(listing); err != nil && err != io.EOF {
+	err = ws.SetWriteDeadline(time.Now().Add(writeWait))
+	if err != nil {
+		return nil, fmt.Errorf("set write deadline: %v", err)
+	}
+
+	err = ws.WriteJSON(listing)
+	if err != nil && err != io.EOF {
 		return nil, fmt.Errorf("respond to websocket: %v", err)
 	}
 

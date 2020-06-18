@@ -21,6 +21,7 @@ type Server struct {
 func NewServer() *Server {
 	srv := &Server{}
 	srv.routes()
+
 	return srv
 }
 
@@ -36,7 +37,6 @@ func (s *Server) routes() {
 
 func (s *Server) webhook() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("webhook")
 		if !isValidMinioRequest(r) {
 			return
 		}
@@ -45,6 +45,7 @@ func (s *Server) webhook() http.HandlerFunc {
 		if err != nil {
 			log.Printf("get event type: %v", err)
 			w.WriteHeader(http.StatusBadRequest)
+
 			return
 		}
 
@@ -68,6 +69,7 @@ type MinioNotification struct {
 
 func eventType(r io.Reader) (string, error) {
 	notification := &MinioNotification{}
+
 	err := json.NewDecoder(r).Decode(notification)
 	if err != nil {
 		return "", fmt.Errorf("get event type: %v", err)

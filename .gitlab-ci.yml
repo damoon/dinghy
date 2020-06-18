@@ -1,6 +1,7 @@
 include:
   - local: frontend/.gitlab-ci.yml
   - local: backend/.gitlab-ci.yml
+  - local: notify/.gitlab-ci.yml
 
 stages:
   - test

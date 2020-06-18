@@ -1,7 +1,7 @@
-lint backend:
+lint notify:
   stage: test
   image: golangci/golangci-lint:v1.27.0-alpine
   timeout: 10m
   script:
-    - cd backend
+    - cd notify
     - golangci-lint run ./...
