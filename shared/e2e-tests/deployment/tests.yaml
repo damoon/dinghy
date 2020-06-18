@@ -9,6 +9,27 @@ spec:
       labels:
         app: e2e-tests
     spec:
+      initContainers:
+        - name: wait-for-backend
+          image: alpine
+          args:
+            - /bin/sh
+            - -c
+            - >
+              set -x;
+              while [ $(curl -sw '%{http_code}' "http://backend:8080" -o /dev/null) -ne 200]; do
+                sleep 1;
+              done
+        - name: wait-for-frontend
+          image: alpine
+          args:
+            - /bin/sh
+            - -c
+            - >
+              set -x;
+              while [ $(curl -sw '%{http_code}' "http://frontend:8080" -o /dev/null) -ne 200]; do
+                sleep 1;
+              done
       containers:
       - name: tests
         image: e2e-tests-image

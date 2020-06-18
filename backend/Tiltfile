@@ -16,7 +16,7 @@ docker_build(
        , 'cmd'
        , 'deployment/backend'
   ],
-  ignore=['backend/*/*_test.go'],
+  ignore=['*/*_test.go'],
   live_update=[
     sync('pkg',    '/app/pkg'),
     sync('cmd',    '/app/cmd'),

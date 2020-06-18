@@ -30,14 +30,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) routes() {
 	s.router = http.NewServeMux()
-	s.router.Handle("/healthz", s.handleHealthz())
 	s.router.Handle("/metrics", promhttp.Handler())
 	s.router.Handle("/webhook", s.webhook())
-}
-
-func (s *Server) handleHealthz() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-	}
 }
 
 func (s *Server) webhook() http.HandlerFunc {
