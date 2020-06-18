@@ -1,5 +1,5 @@
 
-local_resource('proto',
+local_resource('notify go generate',
     cmd='go generate ./pkg',
     deps=['service.proto'],
 )
@@ -15,21 +15,21 @@ local_resource('proto',
 k8s_yaml('deployment/notify/kubernetes.yaml')
 docker_build(
   'notify-image',
-  '..',
+  '.',
   dockerfile='deployment/notify/Dockerfile',
   target='workbench',
   only=[ 'go.mod'
        , 'go.sum'
-       , 'notify/pkg'
-       , 'notify/cmd'
-       , 'notify/deployment/notify'],
+       , 'pkg'
+       , 'cmd'
+       , 'deployment/notify' 
+  ],
   ignore=['*/*_test.go'],
   live_update=[
-    sync('pkg',        '/app/pkg'),
-    sync('cmd/notify', '/app/cmd/notify'),
-    sync('go.mod',     '/app/go.mod'),
-    sync('go.sum',     '/app/go.sum'),
-    run('pwd'),
+    sync('pkg',    '/app/pkg'),
+    sync('cmd',    '/app/cmd'),
+    sync('go.mod', '/app/go.mod'),
+    sync('go.sum', '/app/go.sum'),
     run('go install ./cmd/notify/main.go'),
   ],
 )

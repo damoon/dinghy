@@ -1,4 +1,4 @@
-module gitlab.com/davedamoon/dinghy
+module gitlab.com/davedamoon/dinghy/backend
 
 go 1.14
 
@@ -15,7 +15,7 @@ require (
 	github.com/urfave/cli/v2 v2.2.0
 	go.uber.org/atomic v1.6.0 // indirect
 	golang.org/x/image v0.0.0-20200609002522-3f4726a040e8
-	golang.org/x/net v0.0.0-20200602114024-627f9648deb9
+	golang.org/x/net v0.0.0-20200602114024-627f9648deb9 // indirect
 	google.golang.org/grpc v1.29.1
 	google.golang.org/protobuf v1.24.0
 )

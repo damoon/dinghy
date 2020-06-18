@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"gitlab.com/davedamoon/dinghy/notify/pkg/pb"
+	"gitlab.com/davedamoon/dinghy/backend/pkg/pb"
 	"google.golang.org/grpc"
 )
 

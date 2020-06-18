@@ -1,6 +1,6 @@
 # WORKBENCH ###################################################
 FROM golang:1.14.1 AS workbench
-WORKDIR /go/src/gitlab.com/davedamoon/dinghy/
+WORKDIR /app
 
 RUN apt-get update
 RUN apt-get install -y entr
@@ -9,9 +9,9 @@ COPY go.mod .
 COPY go.sum .
 RUN go mod download
 
-COPY notify/cmd notify/cmd
-COPY notify/pkg notify/pkg
-RUN go install ./notify/cmd/notify
+COPY cmd cmd
+COPY pkg pkg
+RUN go install ./cmd/notify
 
 ENV JAEGER_SERVICE_NAME Dinghy
 ENV JAEGER_SAMPLER_TYPE const

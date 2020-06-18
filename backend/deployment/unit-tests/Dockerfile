@@ -7,8 +7,7 @@ COPY go.mod .
 COPY go.sum .
 RUN go mod download
 
-COPY notify/pkg/pb    /go/src/gitlab.com/davedamoon/dinghy/notify/pkg/pb
-COPY backend/cmd backend/cmd
-COPY backend/pkg backend/pkg
+COPY cmd cmd
+COPY pkg pkg
 
-CMD go test ./backend/... && echo "done"
+CMD go test ./... && echo "done"

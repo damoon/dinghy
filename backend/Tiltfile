@@ -1,27 +1,27 @@
 
+local_resource('backend go generate',
+    cmd='go generate ./pkg',
+    deps=['../notify/service.proto'],
+)
+
 k8s_yaml('deployment/backend/kubernetes.yaml')
 docker_build(
   'backend-image',
-  '..',
+  '.',
   dockerfile='deployment/backend/Dockerfile',
   target='workbench',
   only=[ 'go.mod'
        , 'go.sum'
-       , 'backend/pkg'
-       , 'backend/cmd'
-       , 'backend/deployment/backend'
-       , 'notify/pkg/pb'
+       , 'pkg'
+       , 'cmd'
+       , 'deployment/backend'
   ],
   ignore=['backend/*/*_test.go'],
   live_update=[
-    sync('backend/pkg',    '/go/src/gitlab.com/davedamoon/dinghy/backend/pkg'),
-    sync('backend/cmd',    '/go/src/gitlab.com/davedamoon/dinghy/backend/cmd'),
-    sync('backend/go.mod', '/go/src/gitlab.com/davedamoon/dinghy/backend/go.mod'),
-    sync('backend/go.sum', '/go/src/gitlab.com/davedamoon/dinghy/backend/go.sum'),
-    sync('notify/pkg',     '/go/src/gitlab.com/davedamoon/dinghy/notify/pkg'),
-    sync('notify/go.mod',  '/go/src/gitlab.com/davedamoon/dinghy/notify/go.mod'),
-    sync('notify/go.sum',  '/go/src/gitlab.com/davedamoon/dinghy/notify/go.sum'),
-    sync('go.mod',         '/go/src/gitlab.com/davedamoon/dinghy/go.mod'),
+    sync('pkg',    '/app/pkg'),
+    sync('cmd',    '/app/cmd'),
+    sync('go.mod', '/app/go.mod'),
+    sync('go.sum', '/app/go.sum'),
     run('go install ./cmd/backend'),
   ],
 )
@@ -49,13 +49,12 @@ k8s_resource(
 k8s_yaml('deployment/unit-tests/tests.yaml')
 docker_build(
   'unit-tests-image',
-  '..',
+  '.',
   dockerfile='deployment/unit-tests/Dockerfile',
   only=[ 'go.mod'
        , 'go.sum'
-       , 'backend/pkg'
-       , 'backend/cmd'
-       , 'backend/deployment/backend'
-       , 'notify/pkg/pb'
+       , 'pkg'
+       , 'cmd'
+       , 'deployment/backend'
   ],
 )
