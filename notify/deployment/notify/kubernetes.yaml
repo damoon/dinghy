@@ -23,7 +23,7 @@ spec:
             containerPort: 50051
         lifenessProbe:
           httpGet:
-            path: /metrics
+            path: /healthz
             port: 8080
         readinessProbe:
           exec:

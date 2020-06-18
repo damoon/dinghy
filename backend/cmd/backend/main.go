@@ -18,11 +18,14 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/gorilla/websocket"
 	"github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go/config"
 	cli "github.com/urfave/cli/v2"
 	dinghy "gitlab.com/davedamoon/dinghy/backend/pkg"
 	"gitlab.com/davedamoon/dinghy/backend/pkg/middleware"
+	"gitlab.com/davedamoon/dinghy/backend/pkg/pb"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -39,6 +42,7 @@ func main() {
 			&cli.StringFlag{Name: "s3-location", Value: "us-east-1", Usage: "s3 bucket location."},
 			&cli.StringFlag{Name: "s3-bucket", Required: true, Usage: "s3 bucket name."},
 			&cli.StringFlag{Name: "frontend-url", Required: true, Usage: "Frontend domain for CORS and redirects."},
+			&cli.StringFlag{Name: "notify-endpoint", Value: "notify:50051", Usage: "Notify service endpoint."},
 		},
 		Action: run,
 	}
@@ -79,6 +83,12 @@ func run(c *cli.Context) error {
 		Bucket: c.String("s3-bucket"),
 	}
 
+	nc, closeNotify, err := NewNotifierClient(c.String("notify-endpoint"))
+	if err != nil {
+		return fmt.Errorf("setup notify client: %v", err)
+	}
+	defer closeNotify.Close()
+
 	adm := dinghy.NewAdminServer()
 	adm.Storage = storage
 	admHandler := middleware.RequestID(rand.Int63, adm)
@@ -87,14 +97,22 @@ func run(c *cli.Context) error {
 	admHandler = middleware.Timeout(900*time.Millisecond, admHandler)
 	admServer := httpServer(admHandler, c.String("admin-addr"))
 
-	svc := dinghy.NewServiceServer()
-	svc.Storage = storage
+	svc := &dinghy.ServiceServer{}
 	svc.FrontendURL = c.String("frontend-url")
+	svc.NotifierClient = nc
+	svc.Storage = storage
+	svc.Upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin:     svc.CheckOrigin,
+	}
+
 	svcHandler := middleware.CORS(c.String("frontend-url"), svc)
 	svcHandler = middleware.RequestID(rand.Int63, svcHandler)
 	svcHandler = middleware.InitTraceContext(svcHandler)
 	svcHandler = middleware.InstrumentHttpHandler(svcHandler)
 	svcHandler = middleware.Timeout(29*time.Second, svcHandler)
+
 	svcServer := httpServer(svcHandler, c.String("service-addr"))
 
 	log.Println("starting admin server")
@@ -123,6 +141,14 @@ func run(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func NewNotifierClient(addr string) (pb.NotifierClient, io.Closer, error) {
+	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	if err != nil {
+		return nil, nil, fmt.Errorf("connect to %s: %v", addr, err)
+	}
+	return pb.NewNotifierClient(conn), conn, err
 }
 
 func setupMinio(endpoint, accessKey, secretPath string, useSSL bool, region, bucket string) (*s3.S3, error) {

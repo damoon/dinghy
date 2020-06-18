@@ -3,6 +3,7 @@ package dinghy
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"reflect"
@@ -20,7 +21,7 @@ const (
 )
 
 func (s ServiceServer) serveWs(w http.ResponseWriter, r *http.Request) {
-	ws, err := s.upgrader.Upgrade(w, r, nil)
+	ws, err := s.Upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		if _, ok := err.(websocket.HandshakeError); !ok {
@@ -28,17 +29,26 @@ func (s ServiceServer) serveWs(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	defer ws.Close()
 
 	msg := make(chan []byte)
 	defer close(msg)
 
-	go s.writer(ws, msg)
+	ctx := r.Context()
+
+	go s.writer(ctx, ws, msg)
 	reader(ws, msg)
 }
 
-func reader(ws *websocket.Conn, msg chan<- []byte) {
-	defer ws.Close()
+func (s ServiceServer) CheckOrigin(r *http.Request) bool {
+	if r.Header.Get("Origin") != s.FrontendURL {
+		return false
+	}
 
+	return true
+}
+
+func reader(ws *websocket.Conn, msg chan<- []byte) {
 	ws.SetReadLimit(512)
 	ws.SetReadDeadline(time.Now().Add(pongWait))
 	ws.SetPongHandler(func(string) error {
@@ -47,9 +57,8 @@ func reader(ws *websocket.Conn, msg chan<- []byte) {
 	})
 
 	for {
-		// TODO: check and ignore closed
 		_, m, err := ws.ReadMessage()
-		if err != nil {
+		if err != nil && err != io.EOF {
 			log.Printf("read from websocket: %v", err)
 			break
 		}
@@ -58,15 +67,15 @@ func reader(ws *websocket.Conn, msg chan<- []byte) {
 	}
 }
 
-func (s ServiceServer) writer(ws *websocket.Conn, msg <-chan []byte) {
+func (s ServiceServer) writer(ctx context.Context, ws *websocket.Conn, msg <-chan []byte) {
 	pingTicker := time.NewTicker(pingPeriod)
-	fileTicker := time.NewTicker(refreshPeriod)
+	notify := s.listen(ctx)
+
 	m := []byte{}
 	var previous *Directory
 
 	defer func() {
 		pingTicker.Stop()
-		fileTicker.Stop()
 		ws.Close()
 	}()
 
@@ -81,20 +90,11 @@ func (s ServiceServer) writer(ws *websocket.Conn, msg <-chan []byte) {
 
 			previous = cur
 
-		//		case <-fileTicker.C:
 		case <-notify:
 			if len(m) == 0 {
 				continue
 			}
 
-			// TODO failed notify connection should trigger reload
-
-			//			client := redis.NewClient(&redis.Options{
-			//				Addr:     "redis:6379",
-			//				Password: "redis123",
-			//			})
-			//			defer client.Close()
-			log.Println("notify")
 			cur, err := s.sendUpdate(ws, previous, string(m))
 			if err != nil {
 				log.Println(err)
@@ -126,9 +126,8 @@ func (s ServiceServer) sendUpdate(ws *websocket.Conn, previous *Directory, path 
 		return &listing, nil
 	}
 
-	// TODO: check and ignore closed
 	ws.SetWriteDeadline(time.Now().Add(writeWait))
-	if err := ws.WriteJSON(listing); err != nil {
+	if err := ws.WriteJSON(listing); err != nil && err != io.EOF {
 		return nil, fmt.Errorf("respond to websocket: %v", err)
 	}
 

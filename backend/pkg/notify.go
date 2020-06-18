@@ -2,57 +2,42 @@ package dinghy
 
 import (
 	"context"
-	"io"
 	"log"
-	"os"
 	"time"
 
 	"gitlab.com/davedamoon/dinghy/backend/pkg/pb"
-	"google.golang.org/grpc"
 )
 
-func notify() {
-	// Set up a connection to the server.
-	conn, err := grpc.Dial("notify:50051", grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
-	}
-	defer conn.Close()
-	c := pb.NewNotifierClient(conn)
-
-	// Contact the server and print out its response.
-	name := "world"
-	if len(os.Args) > 1 {
-		name = os.Args[1]
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+func (s *ServiceServer) notify() {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r, err := c.Listen(ctx, &pb.Request{Name: name})
+	_, err := s.NotifierClient.Notify(ctx, &pb.Request{})
 	if err != nil {
-		log.Fatalf("could not greet: %v", err)
+		log.Printf("could not notify: %v", err)
 	}
 }
 
-func listen() (<-chan struct{}, io.Closer) {
-	// Set up a connection to the server.
-	conn, err := grpc.Dial("notify:50051", grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
-	}
-	defer conn.Close()
-	c := pb.NewNotifierClient(conn)
+func (s *ServiceServer) listen(ctx context.Context) <-chan struct{} {
+	ch := make(chan struct{})
 
-	// Contact the server and print out its response.
-	name := "world"
-	if len(os.Args) > 1 {
-		name = os.Args[1]
-	}
+	go func() {
+		for {
+			_, err := s.NotifierClient.Listen(ctx, &pb.Request{})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	r, err := c.Listen(ctx, &pb.Request{Name: name})
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
-	}
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
+			if err != nil {
+				log.Printf("could not listen: %v", err)
+				time.Sleep(time.Second)
+			}
+
+			ch <- struct{}{}
+		}
+	}()
+
+	return ch
 }
