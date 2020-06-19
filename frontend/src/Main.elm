@@ -249,7 +249,7 @@ socketHandler response state mdl =
                                     , delay 500 (LoadingIsSlow model.url.path)
                                     ]
 
-                list ->
+                _ ->
 --                    { model | error = Just (Debug.toString list) }
                     { model | error = Just "unknown error" }
                         |> withNoCmd

@@ -15,6 +15,6 @@ deploy:
   image: tiltdev/tilt:v0.14.0
   timeout: 10m
   script:
-    - tilt ci
+    - PROD=1 tilt ci
   after_script:
     - kubectl delete ns ${TILT_NAMESPACE} --wait=false
