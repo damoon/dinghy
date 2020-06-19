@@ -371,13 +371,7 @@ viewFolder name =
         [ href (name++"/")
         , class "folder"
         ]
-        [ span
-          [ class "fiv-sqo fiv-icon-folder"
-          , style "width" "72px"
-          , style "height" "72px"
-          , style "margin" "3px"
-          ]
-          []
+        [ span[ class "fiv-sqo fiv-icon-folder fiv-icon" ] []
         , br
         , text name
         ]
@@ -402,31 +396,14 @@ viewIcon : String -> File -> List (Html msg)
 viewIcon backend fi =
   case fi.thumbnail of
     Nothing ->
-      [ span
-        [ class ("fiv-sqo fiv-icon-" ++ fi.icon)
-        , style "width" "72px"
-        , style "height" "72px"
-        , style "margin" "3px"
-        ]
-        []
+      [ span [ class ("fiv-sqo fiv-icon-" ++ fi.icon ++ " fiv-icon") ] []
       , br
       , text fi.name
       ]
     Just url ->
       [ div
-        [ style "height" "72px"
-        , style "width" "122px"
-        , style "position" "relative"
-        ]
-        [ img
-          [ src (backend ++ "/" ++ url)
-          , style "object-fit" "scale-down"
-          , style "position" "absolute"
-          , style "top" "50%"
-          , style "left" "50%"
-          , style "transform" "translate(-50%,-50%)"
-          ]
-          []
+        [ class "thumbnail" ]
+        [ img [ src (backend ++ "/" ++ url) ] []
         ]
       , text fi.name
       ]
