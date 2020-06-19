@@ -250,7 +250,8 @@ socketHandler response state mdl =
                                     ]
 
                 list ->
-                    { model | error = Just (Debug.toString list) }
+--                    { model | error = Just (Debug.toString list) }
+                    { model | error = Just "unknown error" }
                         |> withNoCmd
 
 
