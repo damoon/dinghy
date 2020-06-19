@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -13,11 +14,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	otgrpc "github.com/opentracing-contrib/go-grpc"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go/config"
 	cli "github.com/urfave/cli/v2"
-
-	//	"gitlab.com/davedamoon/dinghy/backend/pkg/middleware"
+	"gitlab.com/davedamoon/dinghy/backend/pkg/middleware"
 	notify "gitlab.com/davedamoon/dinghy/notify/pkg"
 	"gitlab.com/davedamoon/dinghy/notify/pkg/pb"
 	"google.golang.org/grpc"
@@ -63,13 +66,21 @@ func run(c *cli.Context) error {
 
 	httpSrv := notify.NewServer()
 	httpSrv.C = cond
-	//svcHandler := middleware.RequestID(rand.Int63, httpServer)
-	//svcHandler = middleware.InitTraceContext(svcHandler)
-	//svcHandler = middleware.InstrumentHttpHandler(svcHandler)
-	//svcHandler = middleware.Timeout(29*time.Second, svcHandler)
+	svcHandler := middleware.RequestID(rand.Int63, httpSrv)
+	svcHandler = middleware.InitTraceContext(svcHandler)
+	svcHandler = middleware.InstrumentHttpHandler(svcHandler)
+	svcHandler = middleware.Timeout(29*time.Second, svcHandler)
 
-	grpcS := grpc.NewServer()
+	tracer := opentracing.GlobalTracer()
+	grpcS := grpc.NewServer(
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			grpc_prometheus.UnaryServerInterceptor,
+			otgrpc.OpenTracingServerInterceptor(tracer))),
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			grpc_prometheus.StreamServerInterceptor,
+			otgrpc.OpenTracingStreamServerInterceptor(tracer))))
 	pb.RegisterNotifierServer(grpcS, grpcServce)
+	grpc_prometheus.Register(grpcS)
 	grpc_health_v1.RegisterHealthServer(grpcS, health.NewServer())
 	reflection.Register(grpcS)
 

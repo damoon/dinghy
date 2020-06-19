@@ -19,7 +19,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/gorilla/websocket"
-	"github.com/opentracing/opentracing-go"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	otgrpc "github.com/opentracing-contrib/go-grpc"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go/config"
 	cli "github.com/urfave/cli/v2"
 	dinghy "gitlab.com/davedamoon/dinghy/backend/pkg"
@@ -139,7 +141,15 @@ func run(c *cli.Context) error {
 }
 
 func setupNotifyClient(addr string) (*dinghy.NotifyAdapter, io.Closer, error) {
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+	tracer := opentracing.GlobalTracer()
+
+	conn, err := grpc.Dial(
+		addr,
+		grpc.WithInsecure(),
+		grpc.WithUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor),
+		grpc.WithUnaryInterceptor(otgrpc.OpenTracingClientInterceptor(tracer)),
+		grpc.WithStreamInterceptor(grpc_prometheus.StreamClientInterceptor),
+		grpc.WithStreamInterceptor(otgrpc.OpenTracingStreamClientInterceptor(tracer)))
 	if err != nil {
 		return nil, nil, fmt.Errorf("connect to %s: %v", addr, err)
 	}
