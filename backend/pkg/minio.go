@@ -16,12 +16,12 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 )
 
-type Storage struct {
+type MinioAdapter struct {
 	Client *s3.S3
 	Bucket string
 }
 
-func (m Storage) exists(ctx context.Context, path string) (bool, string, string, error) {
+func (m MinioAdapter) exists(ctx context.Context, path string) (bool, string, string, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: stat object")
 	defer span.Finish()
 
@@ -47,7 +47,7 @@ func (m Storage) exists(ctx context.Context, path string) (bool, string, string,
 	return false, "", "", fmt.Errorf("stat object %s: %v", path, err)
 }
 
-func (m Storage) healthy(ctx context.Context) error {
+func (m MinioAdapter) healthy(ctx context.Context) error {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: stat bucket")
 	defer span.Finish()
 
@@ -78,7 +78,7 @@ type File struct {
 	Thumbnail   string `json:"Thumbnail,omitempty"`
 }
 
-func (m Storage) list(ctx context.Context, prefix string) (Directory, error) {
+func (m MinioAdapter) list(ctx context.Context, prefix string) (Directory, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: list prefix")
 	defer span.Finish()
 
@@ -129,7 +129,7 @@ func (m Storage) list(ctx context.Context, prefix string) (Directory, error) {
 	return l, nil
 }
 
-func (m Storage) presign(ctx context.Context, method, path string) (string, error) {
+func (m MinioAdapter) presign(ctx context.Context, method, path string) (string, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: presign")
 	defer span.Finish()
 
@@ -170,7 +170,7 @@ func (m Storage) presign(ctx context.Context, method, path string) (string, erro
 	return url, nil
 }
 
-func (m Storage) delete(ctx context.Context, path string) error {
+func (m MinioAdapter) delete(ctx context.Context, path string) error {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: delete")
 	defer span.Finish()
 
@@ -190,7 +190,7 @@ func (m Storage) delete(ctx context.Context, path string) error {
 	return nil
 }
 
-func (m Storage) upload(ctx context.Context, path string, file io.ReadSeeker, contentType string) error {
+func (m MinioAdapter) upload(ctx context.Context, path string, file io.ReadSeeker, contentType string) error {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: upload")
 	defer span.Finish()
 
@@ -217,7 +217,7 @@ func (m Storage) upload(ctx context.Context, path string, file io.ReadSeeker, co
 	return nil
 }
 
-func (m Storage) download(ctx context.Context, path string, w io.WriterAt) error {
+func (m MinioAdapter) download(ctx context.Context, path string, w io.WriterAt) error {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: download")
 	defer span.Finish()
 

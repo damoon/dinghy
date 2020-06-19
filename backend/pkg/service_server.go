@@ -5,15 +5,14 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"gitlab.com/davedamoon/dinghy/backend/pkg/pb"
 )
 
 // ServiceServer executes the users requests.
 type ServiceServer struct {
-	Storage        ObjectStore
-	FrontendURL    string
-	Upgrader       websocket.Upgrader
-	NotifierClient pb.NotifierClient
+	Storage     *MinioAdapter
+	Notify      *NotifyAdapter
+	FrontendURL string
+	Upgrader    websocket.Upgrader
 }
 
 // NewServiceServer creates a new service server and initiates the routes.

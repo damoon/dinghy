@@ -67,7 +67,7 @@ func run(c *cli.Context) error {
 
 	log.Println("set up storage")
 
-	s3Client, err := setupMinio(
+	storage, err := setupMinioAdapter(
 		c.String("s3-endpoint"),
 		c.String("s3-access-key"),
 		c.String("s3-secret-access-key-file"),
@@ -78,12 +78,7 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("setup minio s3 client: %v", err)
 	}
 
-	storage := dinghy.Storage{
-		Client: s3Client,
-		Bucket: c.String("s3-bucket"),
-	}
-
-	nc, closeNotify, err := NewNotifierClient(c.String("notify-endpoint"))
+	nc, closeNotify, err := setupNotifyClient(c.String("notify-endpoint"))
 	if err != nil {
 		return fmt.Errorf("setup notify client: %v", err)
 	}
@@ -99,8 +94,8 @@ func run(c *cli.Context) error {
 
 	svc := &dinghy.ServiceServer{}
 	svc.FrontendURL = c.String("frontend-url")
-	svc.NotifierClient = nc
 	svc.Storage = storage
+	svc.Notify = nc
 	svc.Upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
@@ -143,15 +138,19 @@ func run(c *cli.Context) error {
 	return nil
 }
 
-func NewNotifierClient(addr string) (pb.NotifierClient, io.Closer, error) {
+func setupNotifyClient(addr string) (*dinghy.NotifyAdapter, io.Closer, error) {
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())
 	if err != nil {
 		return nil, nil, fmt.Errorf("connect to %s: %v", addr, err)
 	}
-	return pb.NewNotifierClient(conn), conn, err
+
+	return &dinghy.NotifyAdapter{
+		NotifierClient: pb.NewNotifierClient(conn),
+	}, conn, nil
 }
 
-func setupMinio(endpoint, accessKey, secretPath string, useSSL bool, region, bucket string) (*s3.S3, error) {
+func setupMinioAdapter(endpoint, accessKey, secretPath string,
+	useSSL bool, region, bucket string) (*dinghy.MinioAdapter, error) {
 	secretKeyBytes, err := ioutil.ReadFile(secretPath)
 	if err != nil {
 		return nil, fmt.Errorf("reading secret access key from %s: %v", secretPath, err)
@@ -179,7 +178,10 @@ func setupMinio(endpoint, accessKey, secretPath string, useSSL bool, region, buc
 
 	s3Client := s3.New(newSession)
 
-	return s3Client, nil
+	return &dinghy.MinioAdapter{
+		Client: s3Client,
+		Bucket: bucket,
+	}, nil
 }
 
 func setupJaeger() (io.Closer, error) {

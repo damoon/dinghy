@@ -8,21 +8,25 @@ import (
 	"gitlab.com/davedamoon/dinghy/backend/pkg/pb"
 )
 
-func (s *ServiceServer) notify() {
+type NotifyAdapter struct {
+	NotifierClient pb.NotifierClient
+}
+
+func (n *NotifyAdapter) notify() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	_, err := s.NotifierClient.Notify(ctx, &pb.Request{})
+	_, err := n.NotifierClient.Notify(ctx, &pb.Request{})
 	if err != nil {
 		log.Printf("could not notify: %v", err)
 	}
 }
 
-func (s *ServiceServer) listen(ctx context.Context) <-chan struct{} {
+func (n *NotifyAdapter) listen(ctx context.Context) <-chan struct{} {
 	ch := make(chan struct{})
 
 	go func() {
 		for {
-			_, err := s.NotifierClient.Listen(ctx, &pb.Request{})
+			_, err := n.NotifierClient.Listen(ctx, &pb.Request{})
 
 			select {
 			case <-ctx.Done():

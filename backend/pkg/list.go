@@ -18,15 +18,6 @@ import (
 	"gitlab.com/davedamoon/dinghy/backend/pkg/middleware"
 )
 
-type ObjectStore interface {
-	list(ctx context.Context, prefix string) (Directory, error)
-	upload(ctx context.Context, path string, file io.ReadSeeker, contentType string) error
-	delete(ctx context.Context, path string) error
-	download(ctx context.Context, path string, w io.WriterAt) error
-	exists(ctx context.Context, path string) (bool, string, string, error)
-	presign(ctx context.Context, method, path string) (string, error)
-}
-
 func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 	ctx := r.Context()
@@ -219,7 +210,7 @@ func (s *ServiceServer) receiveFile(ctx context.Context, path string, r *http.Re
 		return fmt.Errorf("upload: %v", err)
 	}
 
-	go s.notify()
+	go s.Notify.notify()
 
 	return nil
 }

@@ -68,7 +68,7 @@ func reader(ws *websocket.Conn, msg chan<- []byte) {
 
 func (s ServiceServer) writer(ctx context.Context, ws *websocket.Conn, msg <-chan []byte) {
 	pingTicker := time.NewTicker(pingPeriod)
-	notify := s.listen(ctx)
+	notify := s.Notify.listen(ctx)
 
 	m := []byte{}
 	var previous *Directory
