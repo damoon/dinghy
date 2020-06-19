@@ -4,7 +4,7 @@ import Browser
 import Browser.Navigation as Nav
 import Cmd.Extra exposing (withCmd, withCmds, withNoCmd)
 import Html exposing (Html, a, span, text, img, h1, div, br, h2)
-import Html.Attributes exposing (href, style, class, id, src, width, height)
+import Html.Attributes exposing (href, class, id, src, width, height)
 import Json.Decode as JD exposing (decodeString, Decoder, field, string, int, list, map, map3, map5, maybe)
 import Json.Encode exposing (Value)
 import PortFunnel.WebSocket as WebSocket exposing (Response(..))

@@ -84,7 +84,7 @@ func run(c *cli.Context) error {
 	grpc_health_v1.RegisterHealthServer(grpcS, health.NewServer())
 	reflection.Register(grpcS)
 
-	httpS := httpServer(httpSrv, c.String("http"))
+	httpS := httpServer(svcHandler, c.String("http"))
 
 	log.Println("starting grpc server")
 
