@@ -1,4 +1,5 @@
-FROM ymtszw/elm_for_ci:0.19.1
+# build-env ###################################################
+FROM ymtszw/elm_for_ci:0.19.1 AS build-env
 
 RUN yarn global add elm-live
 

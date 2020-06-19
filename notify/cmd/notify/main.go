@@ -54,9 +54,11 @@ func run(c *cli.Context) error {
 
 	jaeger, err := setupJaeger()
 	if err != nil {
-		return fmt.Errorf("setup minio s3 client: %v", err)
+		return fmt.Errorf("setup tracing: %v", err)
 	}
 	defer jaeger.Close()
+
+	log.Println("set up servers")
 
 	m := sync.Mutex{}
 	cond := sync.NewCond(&m)

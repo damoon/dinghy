@@ -14,16 +14,21 @@ spec:
         app: notify
     spec:
       containers:
-      - name: notify
-        image: notify-image
-        ports:
-          - name: service
-            containerPort: 8080
-          - name: grpc
-            containerPort: 50051
-        readinessProbe:
-          exec:
-            command: ["/bin/grpc_health_probe", "-addr=:50051"]
+        - name: notify
+          image: notify-image
+          env:
+            - name: JAEGER_AGENT_HOST
+              value: jaeger
+            - name: JAEGER_AGENT_PORT
+              value: "6831"
+          ports:
+            - name: service
+              containerPort: 8080
+            - name: grpc
+              containerPort: 50051
+          readinessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:50051"]
 ---
 apiVersion: v1
 kind: Service

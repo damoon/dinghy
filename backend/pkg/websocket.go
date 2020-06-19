@@ -38,10 +38,6 @@ func (s ServiceServer) serveWs(w http.ResponseWriter, r *http.Request) {
 	reader(ws, msg)
 }
 
-func (s ServiceServer) CheckOrigin(r *http.Request) bool {
-	return r.Header.Get("Origin") == s.FrontendURL
-}
-
 func reader(ws *websocket.Conn, msg chan<- []byte) {
 	ws.SetReadLimit(512)
 

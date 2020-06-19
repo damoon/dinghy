@@ -1,25 +1,40 @@
 
 k8s_yaml('deployment/notify/kubernetes.yaml')
-docker_build(
-  'notify-image',
-  '.',
-  dockerfile='deployment/notify/Dockerfile',
-  target='workbench',
-  only=[ 'go.mod'
-       , 'go.sum'
-       , 'pkg'
-       , 'cmd'
-       , 'deployment/notify' 
-  ],
-  ignore=['*/*_test.go'],
-  live_update=[
-    sync('pkg',    '/app/pkg'),
-    sync('cmd',    '/app/cmd'),
-    sync('go.mod', '/app/go.mod'),
-    sync('go.sum', '/app/go.sum'),
-    run('go install ./cmd/notify'),
-  ],
-)
+if os.environ.get('PROD', '') ==  '':
+  docker_build(
+    'notify-image',
+    '.',
+    dockerfile='deployment/notify/Dockerfile',
+    target='build-env',
+    only=[ 'go.mod'
+         , 'go.sum'
+         , 'pkg'
+         , 'cmd'
+         , 'deployment/notify' 
+    ],
+    ignore=['*/*_test.go'],
+    live_update=[
+      sync('pkg',    '/app/pkg'),
+      sync('cmd',    '/app/cmd'),
+      sync('go.mod', '/app/go.mod'),
+      sync('go.sum', '/app/go.sum'),
+      run('go install ./cmd/notify'),
+    ],
+  )
+else:
+  docker_build(
+    'notify-image',
+    '.',
+    dockerfile='deployment/notify/Dockerfile',
+    only=[ 'go.mod'
+         , 'go.sum'
+         , 'pkg'
+         , 'cmd'
+         , 'deployment/notify' 
+    ],
+    ignore=['*/*_test.go'],
+  )
+
 k8s_resource(
   'notify',
   port_forwards=['4080:8080', '50051:50051'],

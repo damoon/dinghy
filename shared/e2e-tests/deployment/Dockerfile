@@ -1,4 +1,4 @@
-FROM golang:1.14.1 AS workbench
+FROM golang:1.14.1 AS build-env
 RUN mkdir /tests
 WORKDIR /tests
 

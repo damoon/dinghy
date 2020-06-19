@@ -8,4 +8,4 @@ RUN apt-get install -y bats curl
 
 COPY tests /tests
 
-CMD bats content-type.bats && echo "done"
+CMD bats . && echo "done"

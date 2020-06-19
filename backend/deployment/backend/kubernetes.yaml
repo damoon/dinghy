@@ -14,17 +14,37 @@ spec:
         app: backend
     spec:
       containers:
-      - name: backend
-        image: backend-image
-        ports:
-          - name: service
-            containerPort: 8080
-          - name: admin
-            containerPort: 8090
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 8090
+        - name: backend
+          image: backend-image
+          args:
+            - --s3-endpoint=minio:9000
+            - --s3-access-key=minio
+            - --s3-secret-access-key-file=/secret/minio
+            - --s3-ssl=false
+            - --s3-bucket=dinghy
+            - --frontend-url=http://frontend:8000
+          env:
+            - name: JAEGER_AGENT_HOST
+              value: jaeger
+            - name: JAEGER_AGENT_PORT
+              value: "6831"
+          ports:
+            - name: service
+              containerPort: 8080
+            - name: admin
+              containerPort: 8090
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8090
+          volumeMounts:
+            - name: secret
+              mountPath: "/secret"
+              readOnly: true
+      volumes:
+        - name: secret
+          secret:
+            secretName: backend
 ---
 apiVersion: v1
 kind: Service
@@ -38,3 +58,11 @@ spec:
       port: 8080
     - name: admin
       port: 8090
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend
+type: Opaque
+data:
+  minio: bWluaW8xMjM= # minio123

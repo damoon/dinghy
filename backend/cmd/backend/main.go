@@ -63,7 +63,7 @@ func run(c *cli.Context) error {
 
 	jaeger, err := setupJaeger()
 	if err != nil {
-		return fmt.Errorf("setup minio s3 client: %v", err)
+		return fmt.Errorf("setup tracing: %v", err)
 	}
 	defer jaeger.Close()
 
@@ -80,11 +80,15 @@ func run(c *cli.Context) error {
 		return fmt.Errorf("setup minio s3 client: %v", err)
 	}
 
+	log.Println("set up notify client")
+
 	nc, closeNotify, err := setupNotifyClient(c.String("notify-endpoint"))
 	if err != nil {
 		return fmt.Errorf("setup notify client: %v", err)
 	}
 	defer closeNotify.Close()
+
+	log.Println("set up servers")
 
 	adm := dinghy.NewAdminServer()
 	adm.Storage = storage
@@ -101,7 +105,9 @@ func run(c *cli.Context) error {
 	svc.Upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
-		CheckOrigin:     svc.CheckOrigin,
+		CheckOrigin: func(r *http.Request) bool {
+			return r.Header.Get("Origin") == c.String("frontend-url")
+		},
 	}
 
 	svcHandler := middleware.CORS(c.String("frontend-url"), svc)

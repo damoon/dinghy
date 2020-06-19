@@ -3,15 +3,24 @@ k8s_yaml('deployment/kubernetes.yaml')
 
 k8s_resource('frontend', port_forwards=['127.0.0.1:8000:8000'])
 
-docker_build(
-  'frontend-image',
-  '.',
-  dockerfile='deployment/Dockerfile',
-  live_update=[
-    sync('elm.json', '/app/elm.json'),
-    sync('dist', '/app/dist'),
-    sync('src', '/app/src'),
-    run('touch /app/src/Main.elm'),
-  ],
-  ignore=['elm-stuff'],
-)
+if os.environ.get('PROD', '') ==  '':
+  docker_build(
+    'frontend-image',
+    '.',
+    dockerfile='deployment/Dockerfile',
+    target='build-env',
+    live_update=[
+      sync('elm.json', '/app/elm.json'),
+      sync('dist', '/app/dist'),
+      sync('src', '/app/src'),
+      run('touch /app/src/Main.elm'),
+    ],
+    ignore=['elm-stuff'],
+  )
+else:
+  docker_build(
+    'frontend-image',
+    '.',
+    dockerfile='deployment/Dockerfile',
+    ignore=['elm-stuff'],
+  )
