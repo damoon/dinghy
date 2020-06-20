@@ -1,4 +1,11 @@
 
+local_resource('notify go generate',
+    cmd='go generate ./pkg',
+    deps=['service.proto'],
+    auto_init=False,
+    trigger_mode=TRIGGER_MODE_MANUAL,
+)
+
 k8s_yaml('deployment/notify/kubernetes.yaml')
 if os.environ.get('PROD', '') ==  '':
   docker_build(
