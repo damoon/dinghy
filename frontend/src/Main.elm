@@ -3,7 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav
 import Cmd.Extra exposing (withCmd, withCmds, withNoCmd)
-import Html exposing (Html, a, span, text, img, h1, div, br, h2)
+import Html exposing (Html, a, span, text, img, h1, div, br)
 import Html.Attributes exposing (href, class, id, src, width, height)
 import Json.Decode as JD exposing (decodeString, Decoder, field, string, int, list, map, map3, map5, maybe)
 import Json.Encode exposing (Value)
@@ -275,11 +275,14 @@ view model =
   { title = title
   , body =
       [ div []
-          [ h1 []
-              [ img [ src "/favicon.png", width 32, height 32 ] []
-              , text "Dinghy"
-              ]
-          , viewFetching model.fetching
+          [ viewFetching model.fetching
+          , h1 []
+              ( concat [
+                [ img [ src "/favicon.png", width 32, height 32 ] []
+                , a [ href "/" ] [ text "Dinghy" ]
+                ]
+                , (navigation model.dir)
+              ] )
           , viewDirectory model.backend model.dir
           ]
       ]
@@ -306,32 +309,16 @@ errorBox err =
     [ text err ]
 
 
-viewDirectory : String -> Maybe Directory -> Html Msg
-viewDirectory backend maybeDir =
+navigation : Maybe Directory -> List (Html Msg)
+navigation maybeDir =
   case maybeDir of
     Nothing ->
-      text ""
+      [ text "" ]
     Just dir ->
-      div [ ]
-      (concat
-        [ [ h2 [] (navigation dir.path)
-          , br
-          ]
-        , List.map viewFolder dir.directories
-        , List.map (viewFile backend) dir.files
-        ])
-
-
-navigation : String -> List (Html Msg)
-navigation path =
-  let
-    elements = String.split "/" path
-    links = navigationElements "/" elements
-  in
-    concat
-    [ [ a [ href "/" ] [ text "Root" ] ]
-    , links
-    ]
+      let
+        elements = String.split "/" dir.path
+      in
+        navigationElements "/" elements
 
 
 navigationElements : String -> List String -> List (Html Msg)
@@ -360,6 +347,19 @@ navigationElements previous elements =
           ]
         , ls
         ]
+
+
+viewDirectory : String -> Maybe Directory -> Html Msg
+viewDirectory backend maybeDir =
+  case maybeDir of
+    Nothing ->
+      text ""
+    Just dir ->
+      div [ ]
+      (concat
+        [ List.map viewFolder dir.directories
+        , List.map (viewFile backend) dir.files
+        ])
 
 
 viewFolder : String -> Html Msg
