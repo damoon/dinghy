@@ -12,7 +12,7 @@ variables:
 
 deploy:
   stage: test
-  image: tiltdev/tilt:v0.14.0
+  image: tiltdev/tilt:v0.15.0
   timeout: 10m
   script:
     - PROD=1 tilt ci
