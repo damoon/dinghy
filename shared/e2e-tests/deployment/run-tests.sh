@@ -1,15 +1,15 @@
 #!/bin/bash
 
-set -euxo pipefail;
+set -euo pipefail;
 
 echo -n "waiting for backend"
-while ! curl --max-time 1 --fail --silent -v -o /dev/null http://backend:8090/healthz ;
+while ! curl --max-time 1 --fail --silent -o /dev/null http://backend:8090/healthz ;
     do echo -n ".";
 done
 echo ""
 
 echo -n "waiting for frontend"
-while ! curl --max-time 1 --fail --silent -v -o /dev/null http://frontend:8000/ ;
+while ! curl --max-time 1 --fail --silent -o /dev/null http://frontend:8000/ ;
     do echo -n ".";
 done
 echo ""
