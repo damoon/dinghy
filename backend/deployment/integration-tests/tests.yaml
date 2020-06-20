@@ -9,15 +9,6 @@ spec:
       labels:
         app: backend-integration-tests
     spec:
-      initContainers:
-        - name: wait-for-backend
-          image: curlimages/curl:7.70.0
-          args:
-            - /bin/sh
-            - -c
-            - >
-              set -euxo pipefail;
-              while ! curl --max-time 1 --fail --silent -v -o /dev/null http://backend:8080/ ; do echo ""; done
       containers:
       - name: tests
         image: integration-tests-image

@@ -1,5 +1,5 @@
 # build-env ###################################################
-FROM golang:1.14.4 AS build-env
+FROM golang:1.14.4-stretch AS build-env
 WORKDIR /app
 
 RUN apt-get update
@@ -15,9 +15,6 @@ ENV JAEGER_AGENT_PORT 6831
 COPY deployment/backend/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 
-RUN mkdir /secret
-RUN echo "minio123" > /secret/minio
-
 COPY go.mod .
 COPY go.sum .
 RUN go mod download
@@ -26,11 +23,8 @@ COPY cmd cmd
 COPY pkg pkg
 RUN go install ./cmd/backend
 
-COPY deployment/backend/entrypoint.sh /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
-
 ###############################################################
-FROM debian:buster
+FROM debian:stretch
 
 ENV JAEGER_SERVICE_NAME Backend
 ENV JAEGER_SAMPLER_TYPE const
