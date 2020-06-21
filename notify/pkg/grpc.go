@@ -1,4 +1,6 @@
 //go:generate protoc -I .. --go_opt=paths=source_relative --go_out=plugins=grpc:pb service.proto
+//go:generate rm -rf middleware
+//go:generate cp -a ../../backend/pkg/middleware middleware
 
 package notify
 

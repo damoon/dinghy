@@ -20,13 +20,18 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go/config"
 	cli "github.com/urfave/cli/v2"
-	"gitlab.com/davedamoon/dinghy/backend/pkg/middleware"
 	notify "gitlab.com/davedamoon/dinghy/notify/pkg"
+	"gitlab.com/davedamoon/dinghy/notify/pkg/middleware"
 	"gitlab.com/davedamoon/dinghy/notify/pkg/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
+)
+
+var (
+	gitHash string
+	gitRef  string
 )
 
 func main() {
@@ -50,6 +55,13 @@ func main() {
 }
 
 func run(c *cli.Context) error {
+	log.Printf("git hash: %v", gitHash)
+	log.Printf("git ref: %v", gitRef)
+
+	log.Println("set up metrics")
+
+	middleware.InitMetrics(gitHash, gitRef)
+
 	log.Println("set up tracing")
 
 	jaeger, err := setupJaeger()

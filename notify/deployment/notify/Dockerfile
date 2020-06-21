@@ -23,9 +23,13 @@ COPY go.mod .
 COPY go.sum .
 RUN go mod download
 
+ARG SOURCE_BRANCH
+ARG SOURCE_COMMIT
+ENV LDFLAGS="-X main.gitRef=${SOURCE_BRANCH} -X main.gitHash=${SOURCE_COMMIT} "
+
 COPY cmd cmd
 COPY pkg pkg
-RUN go install ./cmd/notify
+RUN go install -ldflags="${LDFLAGS}" ./cmd/notify
 
 ###############################################################
 FROM debian:buster

@@ -30,6 +30,11 @@ import (
 	"google.golang.org/grpc"
 )
 
+var (
+	gitHash string
+	gitRef  string
+)
+
 func main() {
 	app := &cli.App{
 		Name:  "boom",
@@ -59,6 +64,13 @@ func main() {
 }
 
 func run(c *cli.Context) error {
+	log.Printf("git hash: %v", gitHash)
+	log.Printf("git ref: %v", gitRef)
+
+	log.Println("set up metrics")
+
+	middleware.InitMetrics(gitHash, gitRef)
+
 	log.Println("set up tracing")
 
 	jaeger, err := setupJaeger()

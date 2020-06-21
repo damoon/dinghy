@@ -13,6 +13,7 @@ if os.environ.get('PROD', '') ==  '':
     '.',
     dockerfile='deployment/notify/Dockerfile',
     target='build-env',
+    build_args={"SOURCE_BRANCH":"branch_or_tag", "SOURCE_COMMIT":"githash123"},
     only=[ 'go.mod'
          , 'go.sum'
          , 'pkg'
