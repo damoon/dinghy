@@ -4,7 +4,7 @@ import Browser
 import Browser.Navigation as Nav
 import Cmd.Extra exposing (withCmd, withCmds, withNoCmd)
 import Html exposing (Html, a, span, text, img, h1, div, br)
-import Html.Attributes exposing (href, class, id, src, width, height)
+import Html.Attributes exposing (href, class, id, src, width, height, alt)
 import Json.Decode as JD exposing (decodeString, Decoder, field, string, int, list, map, map3, map5, maybe)
 import Json.Encode exposing (Value)
 import PortFunnel.WebSocket as WebSocket exposing (Response(..))
@@ -276,9 +276,14 @@ view model =
   , body =
       [ div []
           [ viewFetching model.fetching
+          , div [ id "repo" ] [
+            a
+              [ href "https://gitlab.com/davedamoon/dinghy/-/issues" ]
+              [ img [ src "/repo.png", width 32, height 32, alt "open issue" ] [] ]
+          ]
           , h1 []
               ( concat [
-                [ img [ src "/favicon.png", width 32, height 32 ] []
+                [ img [ src "/favicon.png", width 32, height 32, alt "Logo" ] []
                 , a [ href "/" ] [ text "Dinghy" ]
                 ]
                 , navigation model.dir
@@ -339,6 +344,8 @@ navigationElements previous elements =
   in
   case (h, t) of
     (Nothing, _) ->
+      []
+    (Just _, Just []) ->
       []
     (Just txt, _) ->
       concat
