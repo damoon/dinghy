@@ -281,7 +281,7 @@ view model =
                 [ img [ src "/favicon.png", width 32, height 32 ] []
                 , a [ href "/" ] [ text "Dinghy" ]
                 ]
-                , (navigation model.dir)
+                , navigation model.dir
               ] )
           , viewDirectory model.backend model.dir
           ]

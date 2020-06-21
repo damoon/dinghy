@@ -1,2 +1,2 @@
 #!/bin/sh
-echo "/go/bin/notify" | entr -d -r notify $@
+find /go/bin/notify | entr -d -r notify $@

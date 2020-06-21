@@ -3,7 +3,6 @@ package dinghy
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"reflect"
@@ -53,8 +52,16 @@ func reader(ws *websocket.Conn, msg chan<- []byte) {
 
 	for {
 		_, m, err := ws.ReadMessage()
-		if err != nil && err != io.EOF {
-			log.Printf("read from websocket: %v", err)
+		if err != nil {
+			e, ok := err.(*websocket.CloseError)
+			if !ok {
+				log.Printf("read from websocket: %v", err)
+				break
+			}
+			if e.Code == websocket.CloseGoingAway {
+				break
+			}
+			log.Printf("read from websocketdssss: %v", err)
 			break
 		}
 
@@ -133,7 +140,10 @@ func (s ServiceServer) sendUpdate(ws *websocket.Conn, previous *Directory, path 
 	}
 
 	err = ws.WriteJSON(listing)
-	if err != nil && err != io.EOF {
+	if err != nil {
+		if err == websocket.ErrCloseSent {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("respond to websocket: %v", err)
 	}
 

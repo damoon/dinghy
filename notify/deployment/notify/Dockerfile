@@ -1,5 +1,5 @@
 # build-env ###################################################
-FROM golang:1.14.4-stretch AS build-env
+FROM golang:1.14.4 AS build-env
 WORKDIR /app
 
 RUN apt-get update
@@ -28,7 +28,7 @@ COPY pkg pkg
 RUN go install ./cmd/notify
 
 ###############################################################
-FROM debian:stretch
+FROM debian:buster
 
 ENV JAEGER_SERVICE_NAME Notify
 ENV JAEGER_SAMPLER_TYPE const
