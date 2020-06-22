@@ -278,7 +278,7 @@ view model =
           [ viewFetching model.fetching
           , div [ id "repo" ] [
             a
-              [ href "https://gitlab.com/davedamoon/dinghy/-/issues" ]
+              [ href "https://github.com/damoon/dinghy" ]
               [ img [ src "/repo.png", width 32, height 32, alt "open issue" ] [] ]
           ]
           , h1 []
