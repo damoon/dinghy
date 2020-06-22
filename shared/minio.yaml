@@ -31,19 +31,9 @@ spec:
           args:
             - server
             - /home/shared
-          env:
-            - name: MINIO_ACCESS_KEY
-              value: minio
-            - name: MINIO_SECRET_KEY
-              value: minio123
-            - name: MINIO_NOTIFY_WEBHOOK_ENABLE
-              value: "on"
-            - name: MINIO_NOTIFY_WEBHOOK_ENDPOINT
-              value: http://notify:8080/webhook
-            - name: MINIO_NOTIFY_WEBHOOK_AUTH_TOKEN
-              value: auth_token_value
-            - name: MINIO_NOTIFY_WEBHOOK_QUEUE_DIR
-              value: /queue
+          envFrom:
+            - secretRef:
+                name: minio
           ports:
             - name: http
               containerPort: 9000
@@ -77,6 +67,15 @@ spec:
         - name: queue
           persistentVolumeClaim:
             claimName: minio-notification-queue
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio
+type: Opaque
+data:
+  MINIO_ACCESS_KEY: bWluaW8= # minio
+  MINIO_SECRET_KEY: bWluaW8xMjM= # minio123
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

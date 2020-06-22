@@ -16,6 +16,8 @@ spec:
       containers:
         - name: notify
           image: notify-image
+          args:
+            - --webhook-token-file=/secret/token
           env:
             - name: JAEGER_AGENT_HOST
               value: jaeger
@@ -29,6 +31,14 @@ spec:
           readinessProbe:
             exec:
               command: ["/bin/grpc_health_probe", "-addr=:50051"]
+          volumeMounts:
+            - name: secret
+              mountPath: "/secret"
+              readOnly: true
+      volumes:
+        - name: secret
+          secret:
+            secretName: notify
 ---
 apiVersion: v1
 kind: Service
@@ -42,3 +52,11 @@ spec:
       port: 8080
     - name: grpc
       port: 50051
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: notify
+type: Opaque
+data:
+  token: dG9rZW4xMjMK # token123

@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -41,6 +43,7 @@ func main() {
 		Flags: []cli.Flag{
 			&cli.StringFlag{Name: "http", Value: ":8080", Usage: "Address for server."},
 			&cli.StringFlag{Name: "grpc", Value: ":50051", Usage: "Address for server."},
+			&cli.StringFlag{Name: "webhook-token-file", Required: true, Usage: "Path to webhook token file."},
 		},
 		Action: run,
 	}
@@ -57,6 +60,13 @@ func main() {
 func run(c *cli.Context) error {
 	log.Printf("git hash: %v", gitHash)
 	log.Printf("git ref: %v", gitRef)
+
+	tokenBytes, err := ioutil.ReadFile(c.String("webhook-token-file"))
+	if err != nil {
+		return fmt.Errorf("reading webhook token from %s: %v", c.String("webhook-token-file"), err)
+	}
+
+	token := strings.TrimSpace(string(tokenBytes))
 
 	log.Println("set up metrics")
 
@@ -79,6 +89,7 @@ func run(c *cli.Context) error {
 	grpcServce.C = cond
 
 	httpSrv := notify.NewServer()
+	httpSrv.BearerToken = token
 	httpSrv.C = cond
 	svcHandler := middleware.RequestID(rand.Int63, httpSrv)
 	svcHandler = middleware.InitTraceContext(svcHandler)

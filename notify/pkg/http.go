@@ -13,8 +13,9 @@ import (
 
 // Server handles http requests.
 type Server struct {
-	router *http.ServeMux
-	C      *sync.Cond
+	BearerToken string
+	router      *http.ServeMux
+	C           *sync.Cond
 }
 
 // NewServer creates a new http server.
@@ -37,7 +38,7 @@ func (s *Server) routes() {
 
 func (s *Server) webhook() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !isValidMinioRequest(r) {
+		if !s.isValidMinioRequest(r) {
 			return
 		}
 
@@ -59,16 +60,16 @@ func (s *Server) webhook() http.HandlerFunc {
 	}
 }
 
-func isValidMinioRequest(r *http.Request) bool {
-	return r.Header.Get("Authorization") == "Bearer auth_token_value"
+func (s *Server) isValidMinioRequest(r *http.Request) bool {
+	return r.Header.Get("Authorization") == "Bearer "+s.BearerToken
 }
 
-type MinioNotification struct {
+type minioNotification struct {
 	EventName string
 }
 
 func eventType(r io.Reader) (string, error) {
-	notification := &MinioNotification{}
+	notification := &minioNotification{}
 
 	err := json.NewDecoder(r).Decode(notification)
 	if err != nil {
