@@ -34,10 +34,10 @@ func (s ServiceServer) serveWs(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	go s.writer(ctx, ws, msg)
-	reader(ws, msg)
+	s.reader(ws, msg)
 }
 
-func reader(ws *websocket.Conn, msg chan<- []byte) {
+func (s ServiceServer) reader(ws *websocket.Conn, msg chan<- []byte) {
 	ws.SetReadLimit(512)
 
 	err := ws.SetReadDeadline(time.Now().Add(pongWait))
@@ -65,7 +65,18 @@ func reader(ws *websocket.Conn, msg chan<- []byte) {
 			break
 		}
 
-		msg <- m
+		switch string(m[0:3]) {
+		case "cd ":
+			msg <- m[3:]
+		case "ex ":
+			go func(path string) {
+				err := s.unzip(path)
+				if err != nil {
+					log.Printf("extract %s: %v", path, err)
+				}
+			}(string(m[3:]))
+		}
+
 	}
 }
 

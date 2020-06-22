@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -72,10 +75,12 @@ type Directory struct {
 
 type File struct {
 	Name        string
+	Path        string
 	DownloadURL string
 	Size        int64
 	Icon        string
 	Thumbnail   string `json:"Thumbnail,omitempty"`
+	Archive     bool
 }
 
 func (m MinioAdapter) list(ctx context.Context, prefix string) (Directory, error) {
@@ -112,11 +117,17 @@ func (m MinioAdapter) list(ctx context.Context, prefix string) (Directory, error
 	for _, object := range ls.Contents {
 		name := strings.TrimPrefix(*object.Key, filesDirectory+prefix)
 		url := strings.TrimPrefix(*object.Key+"?redirect", filesDirectory+"/")
+
+		_, e := archiveExtension(name)
+		isArchive := e == nil
+
 		file := File{
 			Name:        name,
+			Path:        prefix + name,
 			Size:        *object.Size,
 			DownloadURL: url,
 			Icon:        icon(name),
+			Archive:     isArchive,
 		}
 
 		if thumbnailSupported(name) {
@@ -215,6 +226,35 @@ func (m MinioAdapter) upload(ctx context.Context, path string, file io.ReadSeeke
 	}
 
 	return nil
+}
+
+func (m MinioAdapter) uploadRecursive(ctx context.Context, src, target string) error {
+	return filepath.Walk(src,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			file, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer file.Close()
+
+			extention := filepath.Ext(path)
+			contentType := mime.TypeByExtension(extention)
+
+			err = m.upload(ctx, target+strings.TrimPrefix(path, src), file, contentType)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
 }
 
 func (m MinioAdapter) download(ctx context.Context, path string, w io.WriterAt) error {

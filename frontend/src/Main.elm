@@ -3,9 +3,10 @@ module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav
 import Cmd.Extra exposing (withCmd, withCmds, withNoCmd)
-import Html exposing (Html, a, span, text, img, h1, div, br)
+import Html exposing (Html, a, span, button, text, img, h1, div, br)
 import Html.Attributes exposing (href, class, id, src, width, height, alt)
-import Json.Decode as JD exposing (decodeString, Decoder, field, string, int, list, map, map3, map5, maybe)
+import Html.Events exposing (onClick)
+import Json.Decode as JD exposing (decodeString, Decoder, field, string, bool, int, list, map, map3, map7, maybe)
 import Json.Encode exposing (Value)
 import PortFunnel.WebSocket as WebSocket exposing (Response(..))
 import PortFunnels exposing (FunnelDict, Handler(..), State)
@@ -67,10 +68,12 @@ type alias Directory =
 
 type alias File =
   { name : String
+  , path : String
   , size : Int
   , downloadURL : String
   , icon : String
   , thumbnail : Maybe String
+  , archive : Bool
   }
 
 
@@ -124,6 +127,7 @@ init cfg url key =
 type Msg
   = Startup
   | LoadingIsSlow String
+  | Extract String
   | LinkClicked Browser.UrlRequest
   | UrlChanged Url.Url
   | Process Value
@@ -153,6 +157,10 @@ update msg model =
         _ ->
           ( model, Cmd.none )
 
+    Extract path ->
+      model
+      |> withCmd (WebSocket.makeSend model.key ( "ex " ++ path ) |> send model)
+
     LinkClicked urlRequest ->
       case urlRequest of
         Browser.Internal url ->
@@ -171,7 +179,7 @@ update msg model =
             mdl = { model | url = url, fetching = Loading }
         in
             mdl
-            |> withCmds [ WebSocket.makeSend mdl.key mdl.url.path |> send mdl
+            |> withCmds [ WebSocket.makeSend mdl.key ( "cd " ++ mdl.url.path ) |> send mdl
                         , delay 500 (LoadingIsSlow mdl.url.path)
                         ]
 
@@ -226,7 +234,7 @@ socketHandler response state mdl =
 
         WebSocket.ConnectedResponse _ ->
             model
-            |> withCmds [ WebSocket.makeSend model.key model.url.path |> send model
+            |> withCmds [ WebSocket.makeSend model.key ( "cd " ++ model.url.path ) |> send model
                         , delay 500 (LoadingIsSlow model.url.path)
                         ]
 
@@ -245,7 +253,7 @@ socketHandler response state mdl =
 
                 [ ReconnectedResponse _ ] ->
                     model
-                        |> withCmds [ WebSocket.makeSend model.key model.url.path |> send model
+                        |> withCmds [ WebSocket.makeSend model.key ( "cd " ++ model.url.path ) |> send model
                                     , delay 500 (LoadingIsSlow model.url.path)
                                     ]
 
@@ -389,13 +397,18 @@ viewFolder name =
 
 viewFile : String -> File -> Html Msg
 viewFile backend fi =
+  let
+    extract = if fi.archive then
+                button [ onClick (Extract fi.path) ] [ text "extract" ]
+              else
+                text ""
+  in
   div 
     [ class "icon" ]
     [ div 
       [ class "icon-inner" ]
-      [ a 
-        [ href (backend ++ "/" ++ fi.downloadURL) ]
-        (viewIcon backend fi)
+      [ a [ href (backend ++ "/" ++ fi.downloadURL) ] (viewIcon backend fi)
+      , extract
       ]
     ]
 
@@ -437,9 +450,11 @@ filesDecoder =
 
 fileDecoder : Decoder File
 fileDecoder =
-  map5 File
+  map7 File
     (field "Name" string)
+    (field "Path" string)
     (field "Size" int)
     (field "DownloadURL" string)
     (field "Icon" string)
     (maybe (field "Thumbnail" string))
+    (field "Archive" bool)
