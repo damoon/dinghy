@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/http/pprof"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -34,6 +35,11 @@ func (s *Server) routes() {
 	s.router = http.NewServeMux()
 	s.router.Handle("/metrics", promhttp.Handler())
 	s.router.Handle("/webhook", s.webhook())
+	s.router.HandleFunc("/debug/pprof/", pprof.Index)
+	s.router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	s.router.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	s.router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	s.router.HandleFunc("/debug/pprof/trace", pprof.Trace)
 }
 
 func (s *Server) webhook() http.HandlerFunc {
