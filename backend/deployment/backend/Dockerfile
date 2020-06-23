@@ -28,7 +28,7 @@ COPY pkg pkg
 RUN go install -ldflags="${LDFLAGS}" ./cmd/backend
 
 ###############################################################
-FROM debian:buster
+FROM debian:buster AS final
 
 ENV JAEGER_SERVICE_NAME Backend
 ENV JAEGER_SAMPLER_TYPE const
