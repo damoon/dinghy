@@ -26,6 +26,8 @@ spec:
               value: /badger/data
             - name: BADGER_DIRECTORY_KEY
               value: /badger/key
+            - name: BADGER_SPAN_STORE_TTL
+              value: 2h
           ports:
             - name: query
               containerPort: 16686

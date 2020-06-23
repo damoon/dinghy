@@ -17,27 +17,27 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 )
 
-func (s ServiceServer) serveWs(w http.ResponseWriter, r *http.Request) {
+func (s ServiceServer) serveWs(w http.ResponseWriter, r *http.Request) error {
 	ws, err := s.Upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
 		if _, ok := err.(websocket.HandshakeError); !ok {
-			log.Println(err)
+			return err
 		}
-		return
 	}
 	defer ws.Close()
 
-	msg := make(chan []byte)
+	msg := make(chan string)
 	defer close(msg)
 
 	ctx := r.Context()
 
 	go s.writer(ctx, ws, msg)
-	s.reader(ws, msg)
+	s.reader(ctx, ws, msg)
+
+	return nil
 }
 
-func (s ServiceServer) reader(ws *websocket.Conn, msg chan<- []byte) {
+func (s ServiceServer) reader(ctx context.Context, ws *websocket.Conn, msg chan<- string) {
 	ws.SetReadLimit(512)
 
 	err := ws.SetReadDeadline(time.Now().Add(pongWait))
@@ -67,24 +67,34 @@ func (s ServiceServer) reader(ws *websocket.Conn, msg chan<- []byte) {
 
 		switch string(m[0:3]) {
 		case "cd ":
-			msg <- m[3:]
+			msg <- string(m[3:])
 		case "ex ":
 			go func(path string) {
-				err := s.unzip(path)
+				err := s.unzip(ctx, path)
 				if err != nil {
 					log.Printf("extract %s: %v", path, err)
 				}
+				s.Notify.notify(ctx)
 			}(string(m[3:]))
+		case "rm ":
+			path := string(m[3:])
+
+			err := s.Storage.deleteRecursive(ctx, path)
+			if err != nil {
+				log.Printf("deleting %s: %v", path, err)
+			}
+
+			s.Notify.notify(ctx)
 		}
 
 	}
 }
 
-func (s ServiceServer) writer(ctx context.Context, ws *websocket.Conn, msg <-chan []byte) {
+func (s ServiceServer) writer(ctx context.Context, ws *websocket.Conn, msg <-chan string) {
 	pingTicker := time.NewTicker(pingPeriod)
 	notify := s.Notify.listen(ctx)
 
-	m := []byte{}
+	path := ""
 	var previous *Directory
 
 	defer func() {
@@ -94,27 +104,9 @@ func (s ServiceServer) writer(ctx context.Context, ws *websocket.Conn, msg <-cha
 
 	for {
 		select {
-		case m = <-msg:
-			cur, err := s.sendUpdate(ws, nil, string(m))
-			if err != nil {
-				log.Println(err)
-				return
-			}
 
-			previous = cur
-
-		case <-notify:
-			if len(m) == 0 {
-				continue
-			}
-
-			cur, err := s.sendUpdate(ws, previous, string(m))
-			if err != nil {
-				log.Println(err)
-				return
-			}
-
-			previous = cur
+		case <-ctx.Done():
+			return
 
 		case <-pingTicker.C:
 			err := ws.SetWriteDeadline(time.Now().Add(writeWait))
@@ -128,14 +120,35 @@ func (s ServiceServer) writer(ctx context.Context, ws *websocket.Conn, msg <-cha
 				log.Println(err)
 				return
 			}
+		case <-notify:
+			if len(path) == 0 {
+				continue
+			}
+
+			cur, err := s.sendUpdate(ctx, ws, previous, path)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			previous = cur
+		case path = <-msg:
+			if len(path) == 0 {
+				return
+			}
+
+			cur, err := s.sendUpdate(ctx, ws, nil, path)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			previous = cur
 		}
 	}
 }
 
-func (s ServiceServer) sendUpdate(ws *websocket.Conn, previous *Directory, path string) (*Directory, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func (s ServiceServer) sendUpdate(ctx context.Context, ws *websocket.Conn, previous *Directory, path string) (*Directory, error) {
 	listing, err := s.Storage.list(ctx, path)
 	if err != nil {
 		return nil, fmt.Errorf("list %s: %v", path, err)

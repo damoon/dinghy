@@ -6,21 +6,21 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
-	"time"
 
 	archiver "github.com/mholt/archiver/v3"
+	"github.com/opentracing/opentracing-go"
 )
 
-func (s ServiceServer) unzip(path string) error {
+func (s ServiceServer) unzip(ctx context.Context, path string) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "extract object")
+	defer span.Finish()
+
 	ext, err := archiveExtension(path)
 	if err != nil {
 		return err
 	}
 
 	target := filesDirectory + strings.TrimSuffix(path, ext)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-	defer cancel()
 
 	exists, _, _, err := s.Storage.exists(ctx, target)
 	if err != nil {
@@ -48,17 +48,40 @@ func (s ServiceServer) unzip(path string) error {
 	}
 	defer os.Remove(tmpDir)
 
-	err = archiver.Unarchive(tmpfile.Name(), tmpDir)
-	if err != nil {
-		return fmt.Errorf("extract file: %v", err)
+	{
+		span, _ := opentracing.StartSpanFromContext(ctx, "extract archive")
+		defer span.Finish()
+
+		err = archiver.Unarchive(tmpfile.Name(), tmpDir)
+		if err != nil {
+			return fmt.Errorf("extract file: %v", err)
+		}
 	}
 
+	defer span.Finish()
 	err = s.Storage.uploadRecursive(ctx, tmpDir, target)
 	if err != nil {
 		return fmt.Errorf("upload: %v", err)
 	}
 
 	return nil
+}
+
+func canBeExtracted(file string, dirs []string) bool {
+	ext, err := archiveExtension(file)
+	if err != nil {
+		return false
+	}
+
+	base := strings.TrimSuffix(file, ext)
+
+	for _, dir := range dirs {
+		if base == dir {
+			return false
+		}
+	}
+
+	return true
 }
 
 func archiveExtension(path string) (string, error) {

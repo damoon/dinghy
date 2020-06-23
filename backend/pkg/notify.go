@@ -12,8 +12,8 @@ type NotifyAdapter struct {
 	NotifierClient pb.NotifierClient
 }
 
-func (n *NotifyAdapter) notify() {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+func (n *NotifyAdapter) notify(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	_, err := n.NotifierClient.Notify(ctx, &pb.Request{})
 	if err != nil {

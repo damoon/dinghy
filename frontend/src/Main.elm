@@ -3,7 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav
 import Cmd.Extra exposing (withCmd, withCmds, withNoCmd)
-import Html exposing (Html, a, span, button, text, img, h1, div, br)
+import Html exposing (Html, a, span, text, img, h1, div, br)
 import Html.Attributes exposing (href, class, id, src, width, height, alt)
 import Html.Events exposing (onClick)
 import Json.Decode as JD exposing (decodeString, Decoder, field, string, bool, int, list, map, map3, map7, maybe)
@@ -128,6 +128,7 @@ type Msg
   = Startup
   | LoadingIsSlow String
   | Extract String
+  | Delete String
   | LinkClicked Browser.UrlRequest
   | UrlChanged Url.Url
   | Process Value
@@ -160,6 +161,10 @@ update msg model =
     Extract path ->
       model
       |> withCmd (WebSocket.makeSend model.key ( "ex " ++ path ) |> send model)
+
+    Delete path ->
+      model
+      |> withCmd (WebSocket.makeSend model.key ( "rm " ++ path ) |> send model)
 
     LinkClicked urlRequest ->
       case urlRequest of
@@ -372,25 +377,31 @@ viewDirectory backend maybeDir =
     Just dir ->
       div [ ]
       (concat
-        [ List.map viewFolder dir.directories
+        [ List.map (viewFolder dir.path) dir.directories
         , List.map (viewFile backend) dir.files
         ])
 
 
-viewFolder : String -> Html Msg
-viewFolder name =
+viewFolder : String -> String -> Html Msg
+viewFolder path name =
+  let
+    delete = img [ src "/delete.png"
+                 , class "button"
+                 , onClick (Delete ("/"++path++name))
+                 ] []
+  in
   div 
     [ class "icon" ]
     [ div 
       [ class "icon-inner" ]
-      [ a 
-        [ href (name++"/")
-        , class "folder"
-        ]
-        [ span[ class "fiv-sqo fiv-icon-folder fiv-icon" ] []
-        , br
-        , text name
-        ]
+      [ a [ href (name++"/")
+          , class "folder"]
+          [ span[ class "fiv-sqo fiv-icon-folder fiv-icon" ] []
+          , br
+          , text name
+          ]
+      , br
+      , delete
       ]
     ]
 
@@ -399,16 +410,25 @@ viewFile : String -> File -> Html Msg
 viewFile backend fi =
   let
     extract = if fi.archive then
-                button [ onClick (Extract fi.path) ] [ text "extract" ]
+                img [ src "/extract.gif"
+                    , class "button"
+                    , onClick (Extract fi.path)
+                    ] []
               else
                 text ""
+    delete = img [ src "/delete.png"
+                 , class "button"
+                 , onClick (Delete fi.path)
+                 ] []
   in
   div 
     [ class "icon" ]
     [ div 
       [ class "icon-inner" ]
       [ a [ href (backend ++ "/" ++ fi.downloadURL) ] (viewIcon backend fi)
+      , br
       , extract
+      , delete
       ]
     ]
 

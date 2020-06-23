@@ -23,7 +23,11 @@ func (s *ServiceServer) get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if middleware.IsWebsocket(r) {
-		s.serveWs(w, r)
+		err := s.serveWs(w, r)
+		if err != nil {
+			log.Printf("WS %s: %v", path, err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -210,7 +214,7 @@ func (s *ServiceServer) receiveFile(ctx context.Context, path string, r *http.Re
 		return fmt.Errorf("upload: %v", err)
 	}
 
-	go s.Notify.notify()
+	go s.Notify.notify(ctx)
 
 	return nil
 }

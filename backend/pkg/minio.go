@@ -118,16 +118,13 @@ func (m MinioAdapter) list(ctx context.Context, prefix string) (Directory, error
 		name := strings.TrimPrefix(*object.Key, filesDirectory+prefix)
 		url := strings.TrimPrefix(*object.Key+"?redirect", filesDirectory+"/")
 
-		_, e := archiveExtension(name)
-		isArchive := e == nil
-
 		file := File{
 			Name:        name,
 			Path:        prefix + name,
 			Size:        *object.Size,
 			DownloadURL: url,
 			Icon:        icon(name),
-			Archive:     isArchive,
+			Archive:     canBeExtracted(name, l.Directories),
 		}
 
 		if thumbnailSupported(name) {
@@ -196,6 +193,34 @@ func (m MinioAdapter) delete(ctx context.Context, path string) error {
 	if err != nil {
 		span.LogFields(log.Error(err))
 		return err
+	}
+
+	return nil
+}
+
+func (m MinioAdapter) deleteRecursive(ctx context.Context, prefix string) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: delete recursive")
+	defer span.Finish()
+
+	span.LogFields(
+		log.String("path", prefix),
+	)
+
+	ls, err := m.Client.ListObjectsV2WithContext(ctx, &s3.ListObjectsV2Input{
+		Bucket: aws.String(m.Bucket),
+		Prefix: aws.String(strings.TrimPrefix(filesDirectory, "/") + prefix + "/"),
+	})
+	if err != nil {
+		span.LogFields(log.Error(err))
+		return fmt.Errorf("list %s: %v", prefix, err)
+	}
+
+	for _, object := range ls.Contents {
+		err = m.delete(ctx, *object.Key)
+		if err != nil {
+			span.LogFields(log.Error(err))
+			return fmt.Errorf("delete %s: %v", *object.Key, err)
+		}
 	}
 
 	return nil
