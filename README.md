@@ -1,33 +1,21 @@
-# Webdav to S3 Server
+# Dinghy
 
 This server forwards PUT and GET requests to S3 (minio).
 
-## Example
+It creates thumbnails of pictures and extracts archives.
 
-start minio
+Changes are send in realtime to the browser. 
 
-``` bash
-make minio
-```
+## Contribute
 
-start the server
-
-``` bash
-make start
-```
-
-run the tests
-
-``` bash
-make test
-```
+Set up local host names:
 
 `echo 127.0.0.1 frontend backend minio | sudo tee --append /etc/hosts > /dev/null`
 
+Forward remote docker in docker:
+
 `kubectl -n container-image-builder port-forward svc/dind 12375:2375`
 
+Start up deployment:
+
 `DOCKER_HOST=tcp://127.0.0.1:12375 tilt up`
-
-`GO111MODULE=on code .`
-
-https://github.com/opentracing/opentracing-go#serializing-to-the-wire
