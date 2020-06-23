@@ -32,7 +32,7 @@ COPY pkg pkg
 RUN go install -ldflags="${LDFLAGS}" ./cmd/notify
 
 ###############################################################
-FROM debian:buster AS final
+FROM debian:buster
 
 ENV JAEGER_SERVICE_NAME Notify
 ENV JAEGER_SAMPLER_TYPE const
