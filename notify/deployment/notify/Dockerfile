@@ -40,5 +40,5 @@ ENV JAEGER_SAMPLER_PARAM 1.0
 ENV JAEGER_REPORTER_LOG_SPANS true
 
 COPY --from=build-env /bin/grpc_health_probe /bin/grpc_health_probe
-COPY --from=build-env /go/bin/notify /notify
-ENTRYPOINT [ "/notify" ]
+COPY --from=build-env /go/bin/notify /usr/local/bin/notify
+ENTRYPOINT [ "notify", "server" ]

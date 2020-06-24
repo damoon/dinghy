@@ -39,13 +39,27 @@ var (
 func main() {
 	app := &cli.App{
 		Name:  "notify",
-		Usage: "Propagate calls to a http hook towards GRPC clients.",
-		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "http", Value: ":8080", Usage: "Address for server."},
-			&cli.StringFlag{Name: "grpc", Value: ":50051", Usage: "Address for server."},
-			&cli.StringFlag{Name: "webhook-token-file", Required: true, Usage: "Path to webhook token file."},
+		Usage: "Propagate notifications from a http hook towards GRPC clients.",
+		Commands: []*cli.Command{
+			{
+				Name:  "server",
+				Usage: "Start the server.",
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "http", Value: ":8080", Usage: "Address for server."},
+					&cli.StringFlag{Name: "grpc", Value: ":50051", Usage: "Address for server."},
+					&cli.StringFlag{Name: "webhook-token-file", Required: true, Usage: "Path to webhook token file."},
+				},
+				Action: run,
+			},
+			{
+				Name:  "version",
+				Usage: "Show the version",
+				Action: func(c *cli.Context) error {
+					log.Printf("%s - %s", gitRef, gitHash)
+					return nil
+				},
+			},
 		},
-		Action: run,
 	}
 
 	err := app.Run(os.Args)
@@ -53,8 +67,6 @@ func main() {
 		log.Println(err)
 		os.Exit(1)
 	}
-
-	log.Println("shutdown complete")
 }
 
 func run(c *cli.Context) error {
@@ -132,6 +144,8 @@ func run(c *cli.Context) error {
 	}
 
 	grpcS.Stop()
+
+	log.Println("shutdown complete")
 
 	return nil
 }

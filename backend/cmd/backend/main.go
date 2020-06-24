@@ -37,21 +37,36 @@ var (
 
 func main() {
 	app := &cli.App{
-		Name:  "boom",
-		Usage: "make an explosive entrance",
-		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "service-addr", Value: ":8080", Usage: "Address for user service."},
-			&cli.StringFlag{Name: "admin-addr", Value: ":8090", Usage: "Address for administration service."},
-			&cli.StringFlag{Name: "s3-endpoint", Required: true, Usage: "s3 endpoint."},
-			&cli.StringFlag{Name: "s3-access-key", Required: true, Usage: "s3 access key."},
-			&cli.StringFlag{Name: "s3-secret-access-key-file", Required: true, Usage: "Path to s3 secret access key."},
-			&cli.BoolFlag{Name: "s3-ssl", Value: true, Usage: "s3 uses SSL."},
-			&cli.StringFlag{Name: "s3-location", Value: "us-east-1", Usage: "s3 bucket location."},
-			&cli.StringFlag{Name: "s3-bucket", Required: true, Usage: "s3 bucket name."},
-			&cli.StringFlag{Name: "frontend-url", Required: true, Usage: "Frontend domain for CORS and redirects."},
-			&cli.StringFlag{Name: "notify-endpoint", Value: "notify:50051", Usage: "Notify service endpoint."},
-		},
+		Name:   "backend",
+		Usage:  "Connect http to s3.",
 		Action: run,
+		Commands: []*cli.Command{
+			{
+				Name:  "server",
+				Usage: "Start the server.",
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "service-addr", Value: ":8080", Usage: "Address for user service."},
+					&cli.StringFlag{Name: "admin-addr", Value: ":8090", Usage: "Address for administration service."},
+					&cli.StringFlag{Name: "s3-endpoint", Required: true, Usage: "s3 endpoint."},
+					&cli.StringFlag{Name: "s3-access-key", Required: true, Usage: "s3 access key."},
+					&cli.StringFlag{Name: "s3-secret-access-key-file", Required: true, Usage: "Path to s3 secret access key."},
+					&cli.BoolFlag{Name: "s3-ssl", Value: true, Usage: "s3 uses SSL."},
+					&cli.StringFlag{Name: "s3-location", Value: "us-east-1", Usage: "s3 bucket location."},
+					&cli.StringFlag{Name: "s3-bucket", Required: true, Usage: "s3 bucket name."},
+					&cli.StringFlag{Name: "frontend-url", Required: true, Usage: "Frontend domain for CORS and redirects."},
+					&cli.StringFlag{Name: "notify-endpoint", Value: "notify:50051", Usage: "Notify service endpoint."},
+				},
+				Action: run,
+			},
+			{
+				Name:  "version",
+				Usage: "Show the version",
+				Action: func(c *cli.Context) error {
+					log.Printf("%s - %s", gitRef, gitHash)
+					return nil
+				},
+			},
+		},
 	}
 
 	err := app.Run(os.Args)
@@ -59,8 +74,6 @@ func main() {
 		log.Println(err)
 		os.Exit(1)
 	}
-
-	log.Println("shutdown complete")
 }
 
 func run(c *cli.Context) error {
@@ -154,6 +167,8 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("shutdown admin server: %v", err)
 	}
+
+	log.Println("shutdown complete")
 
 	return nil
 }

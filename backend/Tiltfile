@@ -34,6 +34,7 @@ else:
     'backend-image',
     '.',
     dockerfile='deployment/backend/Dockerfile',
+    build_args={"SOURCE_BRANCH":"branch_or_tag", "SOURCE_COMMIT":"githash123"},
     only=[ 'go.mod'
          , 'go.sum'
          , 'pkg'
@@ -46,7 +47,7 @@ else:
 k8s_resource(
   'backend',
   port_forwards=['8080', '8090'],
-  resource_deps=['create-s3-bucket'],
+  resource_deps=['setup-s3-bucket'],
 )
 
 

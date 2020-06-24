@@ -1,12 +1,12 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: create-s3-bucket
+  name: setup-s3-bucket
 spec:
   backoffLimit: 20
   template:
     metadata:
-      name: create-s3-bucket
+      name: setup-s3-bucket
     spec:
       containers:
         - name: mc
@@ -47,12 +47,12 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: gc-minio
+  name: delete-old-files
 spec:
   backoffLimit: 20
   template:
     metadata:
-      name: create-s3-bucket
+      name: delete-old-files
     spec:
       containers:
         - name: mc

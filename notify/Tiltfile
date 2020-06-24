@@ -34,6 +34,7 @@ else:
     'notify-image',
     '.',
     dockerfile='deployment/notify/Dockerfile',
+    build_args={"SOURCE_BRANCH":"branch_or_tag", "SOURCE_COMMIT":"githash123"},
     only=[ 'go.mod'
          , 'go.sum'
          , 'pkg'

@@ -36,5 +36,5 @@ ENV JAEGER_SAMPLER_PARAM 1.0
 ENV JAEGER_REPORTER_LOG_SPANS true
 
 COPY --from=build-env /etc/mime.types /etc/mime.types
-COPY --from=build-env /go/bin/backend /backend
-ENTRYPOINT [ "/backend" ]
+COPY --from=build-env /go/bin/backend /usr/local/bin/backend
+ENTRYPOINT [ "backend", "server" ]
