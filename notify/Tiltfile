@@ -13,7 +13,7 @@ if os.environ.get('PROD', '') ==  '':
     '.',
     dockerfile='deployment/notify/Dockerfile',
     target='build-env',
-    build_args={"SOURCE_BRANCH":"branch_or_tag", "SOURCE_COMMIT":"githash123"},
+    build_args={"SOURCE_BRANCH":"development", "SOURCE_COMMIT":"development"},
     only=[ 'go.mod'
          , 'go.sum'
          , 'pkg'
@@ -34,7 +34,7 @@ else:
     'notify-image',
     '.',
     dockerfile='deployment/notify/Dockerfile',
-    build_args={"SOURCE_BRANCH":"branch_or_tag", "SOURCE_COMMIT":"githash123"},
+    build_args={"SOURCE_BRANCH":"development", "SOURCE_COMMIT":"development"},
     only=[ 'go.mod'
          , 'go.sum'
          , 'pkg'

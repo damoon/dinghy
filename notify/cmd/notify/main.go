@@ -55,7 +55,11 @@ func main() {
 				Name:  "version",
 				Usage: "Show the version",
 				Action: func(c *cli.Context) error {
-					log.Printf("%s - %s", gitRef, gitHash)
+					_, err := os.Stderr.WriteString(fmt.Sprintf("version: %s\ngit commit: %s", gitRef, gitHash))
+					if err != nil {
+						return err
+					}
+
 					return nil
 				},
 			},
@@ -70,8 +74,8 @@ func main() {
 }
 
 func run(c *cli.Context) error {
-	log.Printf("git hash: %v", gitHash)
-	log.Printf("git ref: %v", gitRef)
+	log.Printf("version: %v", gitRef)
+	log.Printf("git commit: %v", gitHash)
 
 	tokenBytes, err := ioutil.ReadFile(c.String("webhook-token-file"))
 	if err != nil {
