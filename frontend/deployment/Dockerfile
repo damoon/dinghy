@@ -14,6 +14,10 @@ CMD elm-live src/Main.elm --host 0.0.0.0 --port 8000 --dir=./dist --pushstate --
 
 ###############################################################
 FROM nginx:1.19.0-alpine
+
+RUN cp /docker-entrypoint.sh /docker-entrypoint-original.sh
+COPY deployment/entrypoint.sh  /docker-entrypoint.sh
+
 COPY deployment/nginx.conf /etc/nginx/nginx.conf
 COPY deployment/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=build-env /app/dist /usr/share/nginx/html

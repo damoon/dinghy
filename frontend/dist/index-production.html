@@ -18,13 +18,10 @@
   <script src="//cdn.jsdelivr.net/gh/billstclair/elm-websocket-client@4.1.0/example/site/js/PortFunnel.js"></script>
   <script src="//cdn.jsdelivr.net/gh/billstclair/elm-websocket-client@4.1.0/example/site/js/PortFunnel/WebSocket.js"></script>
   <script>
-    if (window.location.hostname != "frontend") {
-      window.location.replace("http://frontend:8000".concat(window.location.pathname));
-    }
     var app = Elm.Main.init({
       node:  document.getElementById("elm"),
-      flags: { backend: "http://backend:8080"
-             , websocket: "ws://backend:8080"
+      flags: { backend: "http://${BACKEND_URL}"
+             , websocket: "ws://${BACKEND_URL}"
              }
     });
     PortFunnel.subscribe(app);

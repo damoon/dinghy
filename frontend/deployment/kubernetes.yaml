@@ -16,6 +16,9 @@ spec:
       containers:
       - name: frontend
         image: frontend-image
+        env:
+          - name: BACKEND_URL
+            value: backend:8080
         ports:
           - containerPort: 8000
         readinessProbe:
