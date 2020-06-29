@@ -48,8 +48,8 @@ func main() {
 					&cli.StringFlag{Name: "service-addr", Value: ":8080", Usage: "Address for user service."},
 					&cli.StringFlag{Name: "admin-addr", Value: ":8090", Usage: "Address for administration service."},
 					&cli.StringFlag{Name: "s3-endpoint", Required: true, Usage: "s3 endpoint."},
-					&cli.StringFlag{Name: "s3-access-key", Required: true, Usage: "s3 access key."},
-					&cli.StringFlag{Name: "s3-secret-access-key-file", Required: true, Usage: "Path to s3 secret access key."},
+					&cli.StringFlag{Name: "s3-access-key-file", Required: true, Usage: "Path to s3 access key."},
+					&cli.StringFlag{Name: "s3-secret-key-file", Required: true, Usage: "Path to s3 secret access key."},
 					&cli.BoolFlag{Name: "s3-ssl", Value: true, Usage: "s3 uses SSL."},
 					&cli.StringFlag{Name: "s3-location", Value: "us-east-1", Usage: "s3 bucket location."},
 					&cli.StringFlag{Name: "s3-bucket", Required: true, Usage: "s3 bucket name."},
@@ -62,7 +62,7 @@ func main() {
 				Name:  "version",
 				Usage: "Show the version",
 				Action: func(c *cli.Context) error {
-					_, err := os.Stderr.WriteString(fmt.Sprintf("version: %s\ngit commit: %s", gitRef, gitHash))
+					_, err := os.Stdout.WriteString(fmt.Sprintf("version: %s\ngit commit: %s", gitRef, gitHash))
 					if err != nil {
 						return err
 					}
@@ -100,8 +100,8 @@ func run(c *cli.Context) error {
 
 	storage, err := setupMinioAdapter(
 		c.String("s3-endpoint"),
-		c.String("s3-access-key"),
-		c.String("s3-secret-access-key-file"),
+		c.String("s3-access-key-file"),
+		c.String("s3-secret-key-file"),
 		c.Bool("s3-ssl"),
 		c.String("s3-location"),
 		c.String("s3-bucket"))
@@ -196,13 +196,19 @@ func setupNotifyClient(addr string) (*dinghy.NotifyAdapter, io.Closer, error) {
 	}, conn, nil
 }
 
-func setupMinioAdapter(endpoint, accessKey, secretPath string,
+func setupMinioAdapter(endpoint, accessKeyPath, secretKeyPath string,
 	useSSL bool, region, bucket string) (*dinghy.MinioAdapter, error) {
-	secretKeyBytes, err := ioutil.ReadFile(secretPath)
+	accessKeyBytes, err := ioutil.ReadFile(accessKeyPath)
 	if err != nil {
-		return nil, fmt.Errorf("reading secret access key from %s: %v", secretPath, err)
+		return nil, fmt.Errorf("reading secret access key from %s: %v", accessKeyPath, err)
 	}
 
+	secretKeyBytes, err := ioutil.ReadFile(secretKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("reading secret access key from %s: %v", secretKeyPath, err)
+	}
+
+	accessKey := strings.TrimSpace(string(accessKeyBytes))
 	secretKey := strings.TrimSpace(string(secretKeyBytes))
 
 	endpointProtocol := "http"

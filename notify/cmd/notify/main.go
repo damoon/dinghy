@@ -55,7 +55,7 @@ func main() {
 				Name:  "version",
 				Usage: "Show the version",
 				Action: func(c *cli.Context) error {
-					_, err := os.Stderr.WriteString(fmt.Sprintf("version: %s\ngit commit: %s", gitRef, gitHash))
+					_, err := os.Stdout.WriteString(fmt.Sprintf("version: %s\ngit commit: %s", gitRef, gitHash))
 					if err != nil {
 						return err
 					}
