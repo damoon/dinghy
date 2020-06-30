@@ -5,7 +5,7 @@ WORKDIR /app
 RUN apt-get update
 RUN apt-get install -y entr
 
-ENV JAEGER_SERVICE_NAME Backend
+ENV JAEGER_SERVICE_NAME Dinghy
 ENV JAEGER_SAMPLER_TYPE const
 ENV JAEGER_SAMPLER_PARAM 1.0
 ENV JAEGER_REPORTER_LOG_SPANS true
@@ -29,7 +29,7 @@ RUN go install -ldflags="-X main.gitRef=${SOURCE_BRANCH} -X main.gitHash=${SOURC
 ###############################################################
 FROM debian:buster
 
-ENV JAEGER_SERVICE_NAME Backend
+ENV JAEGER_SERVICE_NAME Dinghy
 ENV JAEGER_SAMPLER_TYPE const
 ENV JAEGER_SAMPLER_PARAM 1.0
 ENV JAEGER_REPORTER_LOG_SPANS true
