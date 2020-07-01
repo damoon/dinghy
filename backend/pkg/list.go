@@ -214,7 +214,7 @@ func (s *ServiceServer) receiveFile(ctx context.Context, path string, r *http.Re
 		return fmt.Errorf("upload: %v", err)
 	}
 
-	go s.Notify.notify(ctx)
+	s.Notify.notify(ctx)
 
 	return nil
 }

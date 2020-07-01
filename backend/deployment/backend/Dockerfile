@@ -34,6 +34,10 @@ ENV JAEGER_SAMPLER_TYPE const
 ENV JAEGER_SAMPLER_PARAM 1.0
 ENV JAEGER_REPORTER_LOG_SPANS true
 
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build-env /etc/mime.types /etc/mime.types
 COPY --from=build-env /go/bin/backend /usr/local/bin/backend
 ENTRYPOINT [ "backend", "server" ]

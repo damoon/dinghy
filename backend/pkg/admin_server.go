@@ -2,6 +2,7 @@ package dinghy
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"net/http/pprof"
 
@@ -46,6 +47,7 @@ func (s *AdminServer) handleHealthz() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := s.Storage.healthy(r.Context())
 		if err != nil {
+			log.Println(err)
 			w.WriteHeader(http.StatusServiceUnavailable)
 		}
 	}
