@@ -287,7 +287,7 @@ func (l Directory) toJSON(w io.Writer) error {
 }
 
 func (l Directory) toTXT(w io.Writer) error {
-	const letter = `{{.Path}}:
+	const letter = `/{{.Path}}:
 {{range .Directories}}{{ . }}/
 {{end}}{{range .Files}}{{ .Name }} ({{ .Size }} Byte)
 {{end}}`
