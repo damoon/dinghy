@@ -20,7 +20,7 @@ spec:
           - name: BACKEND_URL
             value: http://backend:8080
           - name: WEBSOCKET_URL
-            value: ws://backend:8080
+            value: ws://backend:8080?websocket=1
         ports:
           - containerPort: 8000
         readinessProbe:
