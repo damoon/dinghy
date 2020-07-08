@@ -18,8 +18,8 @@ spec:
           image: backend-image
           args:
             - --s3-endpoint=minio:9000
-            - --s3-access-key-file=/secret/access_key
-            - --s3-secret-key-file=/secret/secret_key
+            - --s3-access-key-file=/secret/minio/MINIO_ACCESS_KEY
+            - --s3-secret-key-file=/secret/minio/MINIO_SECRET_KEY
             - --s3-ssl=false
             - --s3-bucket=dinghy
             - --frontend-url=http://frontend:8000
@@ -38,13 +38,13 @@ spec:
               path: /healthz
               port: 8090
           volumeMounts:
-            - name: secret
-              mountPath: "/secret"
+            - name: minio
+              mountPath: "/secret/minio"
               readOnly: true
       volumes:
-        - name: secret
+        - name: minio
           secret:
-            secretName: backend
+            secretName: minio
 ---
 apiVersion: v1
 kind: Service
@@ -58,12 +58,3 @@ spec:
       port: 8080
     - name: admin
       port: 8090
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: backend
-type: Opaque
-data:
-  access_key: bWluaW8= # minio
-  secret_key: bWluaW8xMjM= # minio123

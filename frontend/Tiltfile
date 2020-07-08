@@ -14,13 +14,20 @@ if os.environ.get('PROD', '') ==  '':
       sync('dist', '/app/dist'),
       sync('src', '/app/src'),
       run('touch /app/src/Main.elm'),
+      run('cat index.html.tpl | envsubst > index.html', trigger=['index.html.tpl']),
     ],
-    ignore=['elm-stuff'],
+    ignore=[
+      'elm-stuff',
+      'deployment/kubernetes.yaml',
+    ],
   )
 else:
   docker_build(
     'frontend-image',
     '.',
     dockerfile='deployment/Dockerfile',
-    ignore=['elm-stuff'],
+    ignore=[
+      'elm-stuff',
+      'deployment/kubernetes.yaml',
+    ],
   )

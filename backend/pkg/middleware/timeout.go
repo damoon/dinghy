@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -36,5 +37,7 @@ func Timeout(timeout time.Duration, next http.Handler) http.Handler {
 }
 
 func IsWebsocket(r *http.Request) bool {
-	return r.URL.Query().Get("websocket") != ""
+	connection := strings.ToLower(r.Header.Get("Connection"))
+	upgrade := strings.ToLower(r.Header.Get("Upgrade"))
+	return strings.Contains(connection, "upgrade") && upgrade == "websocket"
 }
