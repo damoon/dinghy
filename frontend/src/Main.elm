@@ -15,6 +15,7 @@ import List exposing (concat)
 import Process
 import Task
 import String
+--import Debug
 
 
 handlers : List (Handler Model Msg)
@@ -169,8 +170,12 @@ update msg model =
     LinkClicked urlRequest ->
       case urlRequest of
         Browser.Internal url ->
-          ( model
-          , Nav.pushUrl model.nav (Url.toString url) )
+          if String.startsWith model.backend (Url.toString url) then
+            ( model
+            , Nav.load (Url.toString url) )
+          else
+            ( model
+            , Nav.pushUrl model.nav (Url.toString url) )
 
         Browser.External href ->
           ( model
