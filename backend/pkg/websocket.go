@@ -99,7 +99,6 @@ func (s ServiceServer) writer(ctx context.Context, ws *websocket.Conn, msg <-cha
 
 	defer func() {
 		pingTicker.Stop()
-		ws.Close()
 	}()
 
 	for {
