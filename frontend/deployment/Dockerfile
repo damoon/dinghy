@@ -17,8 +17,7 @@ CMD cat dist/index.html.tpl | envsubst > dist/index.html && \
 ###############################################################
 FROM nginx:1.19.0-alpine
 
-RUN cp /docker-entrypoint.sh /docker-entrypoint-original.sh
-COPY deployment/entrypoint.sh  /docker-entrypoint.sh
+COPY deployment/envsubst-index.sh /docker-entrypoint.d/15-envsubst-index.sh
 
 COPY deployment/nginx.conf /etc/nginx/nginx.conf
 COPY deployment/default.conf /etc/nginx/conf.d/default.conf
