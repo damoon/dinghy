@@ -116,7 +116,13 @@ func (m MinioAdapter) list(ctx context.Context, prefix string) (Directory, error
 
 	for _, object := range ls.Contents {
 		name := strings.TrimPrefix(*object.Key, filesDirectory+prefix)
-		url := strings.TrimPrefix(*object.Key+"?redirect", filesDirectory+"/")
+
+		redirect := ""
+		if shouldUsePresignRedirect(name) {
+			redirect = "?redirect"
+		}
+
+		url := strings.TrimPrefix(*object.Key+redirect, filesDirectory+"/")
 
 		file := File{
 			Name:        name,
@@ -135,6 +141,23 @@ func (m MinioAdapter) list(ctx context.Context, prefix string) (Directory, error
 	}
 
 	return l, nil
+}
+
+func shouldUsePresignRedirect(name string) bool {
+	extensions := []string{
+		".html",
+		".htm",
+		".css",
+		".js",
+	}
+
+	for _, ext := range extensions {
+		if strings.HasSuffix(name, ext) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (m MinioAdapter) presign(ctx context.Context, method, path string) (string, error) {
