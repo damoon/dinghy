@@ -57,7 +57,13 @@ type alias Model =
     , dir : Maybe Directory
     , fetching : Fetching
     , backend : String
+    , format : Format
     }
+
+
+type Format
+  = GridView
+  | ListView
 
 
 type alias Directory =
@@ -116,6 +122,7 @@ init cfg url key =
                 , nav = key
                 , dir = Nothing
                 , fetching = Loading
+                , format = GridView
                 }
     in
         model
@@ -133,6 +140,7 @@ type Msg
   | LinkClicked Browser.UrlRequest
   | UrlChanged Url.Url
   | Process Value
+  | SwitchView
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -201,6 +209,14 @@ update msg model =
                 { model | error = Just error } |> withNoCmd
             Ok res ->
                 res
+
+    SwitchView ->
+      let
+        fmt = case model.format of
+          GridView -> ListView
+          ListView -> GridView
+      in
+        { model | format = fmt } |> withNoCmd
 
 
 send : Model -> WebSocket.Message -> Cmd Msg
@@ -294,11 +310,7 @@ view model =
   , body =
       [ div []
           [ viewFetching model.fetching
-          , div [ id "repo" ] [
-            a
-              [ href "https://github.com/damoon/dinghy" ]
-              [ img [ src "/repo.png", width 32, height 32, alt "open issue" ] [] ]
-          ]
+          , settings model.format
           , h1 []
               ( concat [
                 [ img [ src "/favicon.png", width 32, height 32, alt "Logo" ] []
@@ -330,6 +342,23 @@ errorBox err =
   div
     [ id "error" ]
     [ text err ]
+
+
+settings : Format -> Html Msg
+settings fmt =
+  let
+    u = case fmt of
+      GridView -> "/rows.png"
+      ListView -> "/grid.png"
+  in
+    div
+      [ id "settings" ]
+      [ img
+        [ onClick SwitchView, src u, width 32, height 32, alt "switch layout", class "setting-img" ] []
+      , a
+        [ href "https://github.com/damoon/dinghy" ]
+        [ img [ src "/repo.png", width 32, height 32, alt "open issue" ] [] ]
+      ]
 
 
 navigation : Maybe Directory -> List (Html Msg)

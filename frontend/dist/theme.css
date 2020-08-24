@@ -13,9 +13,18 @@ h1 img {
     vertical-align: top;
 }
 
-#repo {
+#settings {
     position: absolute;
-    right: 16px;
+    right: 0px;
+}
+
+#settings a {
+    margin-right: 16px;
+}
+
+#settings .setting-img {
+    cursor: pointer;
+    margin-right: 16px;
 }
 
 .icon {
