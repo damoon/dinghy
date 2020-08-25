@@ -122,7 +122,7 @@ init cfg url key =
                 , nav = key
                 , dir = Nothing
                 , fetching = Loading
-                , format = ListView
+                , format = GridView
                 }
     in
         model
@@ -440,7 +440,7 @@ viewFolder path name =
             [ span[ class "fiv-sqo fiv-icon-folder fiv-icon" ] [] ]
           , text name
           ]
-      , delete
+      , div [ class "buttons" ] [ delete ]
       ]
     ]
 
@@ -449,7 +449,7 @@ viewFile : String -> File -> Html Msg
 viewFile backend file =
   let
     extract = if file.archive then
-                img [ src "/extract.gif"
+                img [ src "/extract.png"
                     , class "button"
                     , onClick (Extract file.path)
                     , title "extract"
@@ -467,8 +467,7 @@ viewFile backend file =
     [ div 
       [ class "element-inner" ]
       [ a [ href (backend ++ "/" ++ file.downloadURL) ] (icon backend file)
-      , delete
-      , extract
+      , div [ class "buttons" ] [ delete, extract ]
       ]
     ]
 

@@ -91,15 +91,25 @@ a {
 }
 
 .button {
-    vertical-align: bottom;
     width: 16px;
     height: 16px;
     margin: 2px;
-    visibility: hidden;
     cursor: pointer;
 }
-.element:hover .button {
-    visibility: visible;
+.buttons {
+    display: none;
+}
+.element:hover .buttons {
+    display: inline;
+}
+#grid .buttons {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 16px;
+}
+#list .button {
+    vertical-align: bottom;
 }
 
 
