@@ -18,13 +18,18 @@
   <script src="//cdn.jsdelivr.net/gh/billstclair/elm-websocket-client@4.1.0/example/site/js/PortFunnel.js"></script>
   <script src="//cdn.jsdelivr.net/gh/billstclair/elm-websocket-client@4.1.0/example/site/js/PortFunnel/WebSocket.js"></script>
   <script>
+    var fmt = localStorage.getItem("viewFormat") || "GridView";
     var app = Elm.Main.init({
       node:  document.getElementById("elm"),
       flags: { backend: "${BACKEND_URL}"
              , websocket: "${WEBSOCKET_URL}"
+             , format: fmt
              }
     });
     PortFunnel.subscribe(app);
+    app.ports.saveViewFormat.subscribe(function(value) {
+      localStorage.setItem("viewFormat", value);
+    });
   </script>
 </body>
 </html>

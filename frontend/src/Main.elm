@@ -1,4 +1,4 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import Browser
 import Browser.Navigation as Nav
@@ -16,6 +16,9 @@ import Process
 import Task
 import String
 --import Debug
+
+
+port saveViewFormat : String -> Cmd msg
 
 
 handlers : List (Handler Model Msg)
@@ -44,6 +47,7 @@ getCmdPort moduleName _ =
 type alias Config =
     { backend : String
     , websocket : String
+    , format : String
     }
 
 type alias Model =
@@ -122,11 +126,25 @@ init cfg url key =
                 , nav = key
                 , dir = Nothing
                 , fetching = Loading
-                , format = GridView
+                , format = decodeFormat cfg.format
                 }
     in
         model
         |> withCmd (delay 0 Startup)
+
+
+encodeFormat : Format -> String
+encodeFormat fmt =
+  case fmt of
+    ListView -> "ListView"
+    GridView -> "GridView"
+
+decodeFormat : String -> Format
+decodeFormat str =
+  if str == "GridView" then
+      GridView
+  else
+      ListView
 
 
 -- UPDATE
@@ -215,8 +233,10 @@ update msg model =
         fmt = case model.format of
           GridView -> ListView
           ListView -> GridView
+        fmtStr = encodeFormat fmt
       in
-        { model | format = fmt } |> withNoCmd
+        { model | format = fmt }
+        |> withCmd (saveViewFormat fmtStr)
 
 
 send : Model -> WebSocket.Message -> Cmd Msg
