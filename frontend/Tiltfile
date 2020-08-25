@@ -14,7 +14,7 @@ if os.environ.get('PROD', '') ==  '':
       sync('dist', '/app/dist'),
       sync('src', '/app/src'),
       run('touch /app/src/Main.elm'),
-      run('cat index.html.tpl | envsubst > index.html', trigger=['index.html.tpl']),
+      run('cat /app/dist/index.html.tpl | envsubst > /app/dist/index.html', trigger=['dist/index.html.tpl']),
     ],
     ignore=[
       'elm-stuff',
