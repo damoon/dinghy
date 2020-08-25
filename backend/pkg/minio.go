@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -83,6 +84,34 @@ type File struct {
 	Archive     bool
 }
 
+type byFileName []File
+
+func (s byFileName) Len() int {
+	return len(s)
+}
+
+func (s byFileName) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s byFileName) Less(i, j int) bool {
+	return strings.ToLower(s[i].Name) < strings.ToLower(s[j].Name)
+}
+
+type byCaseInsensitiveString []string
+
+func (s byCaseInsensitiveString) Len() int {
+	return len(s)
+}
+
+func (s byCaseInsensitiveString) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s byCaseInsensitiveString) Less(i, j int) bool {
+	return strings.ToLower(s[i]) < strings.ToLower(s[j])
+}
+
 func (m MinioAdapter) list(ctx context.Context, prefix string) (Directory, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: list prefix")
 	defer span.Finish()
@@ -139,6 +168,9 @@ func (m MinioAdapter) list(ctx context.Context, prefix string) (Directory, error
 
 		l.Files = append(l.Files, file)
 	}
+
+	sort.Sort(byFileName(l.Files))
+	sort.Sort(byCaseInsensitiveString(l.Directories))
 
 	return l, nil
 }
