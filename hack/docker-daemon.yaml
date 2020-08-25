@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: docker
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dind
+spec:
+  ports:
+    - port: 2375
+  selector:
+    app: docker-in-docker
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docker-in-docker
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docker-in-docker
+  template:
+    metadata:
+      labels:
+        app: docker-in-docker
+    spec:
+      hostNetwork: true
+      containers:
+        - name: docker
+          image: docker:19.03.12-dind
+          args:
+            - sh
+            - -c
+            - dockerd
+              --host=tcp://127.0.0.1:2375
+              --host=tcp://${POD_IP}:2375
+              --insecure-registry=10.0.0.0/8
+              --insecure-registry=172.16.0.0/12
+              --insecure-registry=192.168.0.0/16
+              --mtu=1400
+          env:
+            - name: DOCKER_DRIVER
+              value: overlay2
+            - name: DOCKER_HOST
+              value: tcp://127.0.0.1:2375
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          resources:
+            requests:
+              memory: "8Gi"
+              cpu: "2000m"
+            limits:
+              memory: "8Gi"
+              cpu: "6000m"
+          securityContext:
+            privileged: true
+          readinessProbe:
+            exec:
+              command:
+                - docker
+                - version
+          volumeMounts:
+            - mountPath: /var/lib/docker
+              name: docker
+      volumes:
+        - name: docker
+          persistentVolumeClaim:
+            claimName: docker
