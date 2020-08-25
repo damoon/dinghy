@@ -3,8 +3,8 @@ module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav
 import Cmd.Extra exposing (withCmd, withCmds, withNoCmd)
-import Html exposing (Html, a, span, text, img, h1, div, br)
-import Html.Attributes exposing (href, class, id, src, width, height, alt)
+import Html exposing (Html, a, span, text, img, h1, div)
+import Html.Attributes exposing (href, class, id, src, width, height, title)
 import Html.Events exposing (onClick)
 import Json.Decode as JD exposing (decodeString, Decoder, field, string, bool, int, list, map, map3, map7, maybe)
 import Json.Encode exposing (Value)
@@ -122,7 +122,7 @@ init cfg url key =
                 , nav = key
                 , dir = Nothing
                 , fetching = Loading
-                , format = GridView
+                , format = ListView
                 }
     in
         model
@@ -292,11 +292,6 @@ socketHandler response state mdl =
 -- VIEW
 
 
-br : Html msg
-br =
-    Html.br [] []
-
-
 view : Model -> Browser.Document Msg
 view model =
   let
@@ -313,12 +308,12 @@ view model =
           , settings model.format
           , h1 []
               ( concat [
-                [ img [ src "/favicon.png", width 32, height 32, alt "Logo" ] []
+                [ img [ src "/favicon.png", width 32, height 32 ] []
                 , a [ href "/" ] [ text "Dinghy" ]
                 ]
                 , navigation model.dir
               ] )
-          , viewDirectory model.backend model.dir
+          , viewContent model
           ]
       ]
   }
@@ -354,10 +349,10 @@ settings fmt =
     div
       [ id "settings" ]
       [ img
-        [ onClick SwitchView, src u, width 32, height 32, alt "switch layout", class "setting-img" ] []
+        [ onClick SwitchView, src u, width 32, height 32, title "switch layout", class "setting-img" ] []
       , a
         [ href "https://github.com/damoon/dinghy" ]
-        [ img [ src "/repo.png", width 32, height 32, alt "open issue" ] [] ]
+        [ img [ src "/repo.png", width 32, height 32, title "open issue" ] [] ]
       ]
 
 
@@ -403,6 +398,16 @@ navigationElements previous elements =
         ]
 
 
+viewContent : Model -> Html Msg
+viewContent model =
+  case model.format of
+    ListView ->
+      div [ id "list" ] [ viewDirectory model.backend model.dir ]
+    GridView ->
+      div [ id "grid" ] [ viewDirectory model.backend model.dir ]
+--      listDirectory model.backend model.dir
+
+
 viewDirectory : String -> Maybe Directory -> Html Msg
 viewDirectory backend maybeDir =
   case maybeDir of
@@ -422,65 +427,66 @@ viewFolder path name =
     delete = img [ src "/delete.png"
                  , class "button"
                  , onClick (Delete ("/"++path++name))
+                 , title "delete"
                  ] []
   in
   div 
-    [ class "icon" ]
+    [ class "element" ]
     [ div 
-      [ class "icon-inner" ]
-      [ a [ href (name++"/")
-          , class "folder"]
-          [ span[ class "fiv-sqo fiv-icon-folder fiv-icon" ] []
-          , br
+      [ class "element-inner" ]
+      [ a [ href (name++"/") ]
+          [ div
+            [ class "thumbnail" ]
+            [ span[ class "fiv-sqo fiv-icon-folder fiv-icon" ] [] ]
           , text name
           ]
-      , br
       , delete
       ]
     ]
 
 
 viewFile : String -> File -> Html Msg
-viewFile backend fi =
+viewFile backend file =
   let
-    extract = if fi.archive then
+    extract = if file.archive then
                 img [ src "/extract.gif"
                     , class "button"
-                    , onClick (Extract fi.path)
+                    , onClick (Extract file.path)
+                    , title "extract"
                     ] []
               else
                 text ""
     delete = img [ src "/delete.png"
                  , class "button"
-                 , onClick (Delete fi.path)
+                 , onClick (Delete file.path)
+                 , title "delete"
                  ] []
   in
   div 
-    [ class "icon" ]
+    [ class "element" ]
     [ div 
-      [ class "icon-inner" ]
-      [ a [ href (backend ++ "/" ++ fi.downloadURL) ] (viewIcon backend fi)
-      , br
-      , extract
+      [ class "element-inner" ]
+      [ a [ href (backend ++ "/" ++ file.downloadURL) ] (icon backend file)
       , delete
+      , extract
       ]
     ]
 
 
-viewIcon : String -> File -> List (Html msg)
-viewIcon backend fi =
-  case fi.thumbnail of
+icon : String -> File -> List (Html msg)
+icon backend file =
+  case file.thumbnail of
     Nothing ->
-      [ span [ class ("fiv-sqo fiv-icon-" ++ fi.icon ++ " fiv-icon") ] []
-      , br
-      , text fi.name
+      [ div
+        [ class "thumbnail" ]
+        [ span [ class ("fiv-sqo fiv-icon-" ++ file.icon ++ " fiv-icon") ] [] ]
+      , text file.name
       ]
     Just url ->
       [ div
         [ class "thumbnail" ]
-        [ img [ src (backend ++ "/" ++ url) ] []
-        ]
-      , text fi.name
+        [ img [ src (backend ++ "/" ++ url) ] [] ]
+      , text file.name
       ]
 
 

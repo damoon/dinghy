@@ -17,17 +17,15 @@ h1 img {
     position: absolute;
     right: 0px;
 }
-
 #settings a {
     margin-right: 16px;
 }
-
 #settings .setting-img {
     cursor: pointer;
     margin-right: 16px;
 }
 
-.icon {
+#grid .element {
     width: 128px;
     height: 126px;
     text-align: center;
@@ -36,31 +34,29 @@ h1 img {
     overflow: hidden;
     margin: 4px;
 }
-.fiv-icon {
-    width: 72px;
-    height: 72px;
-    margin: 3px;
-}
-.icon:hover {
+
+#grid .element:hover {
     overflow: visible;
 }
-.icon-inner {
+#grid .element-inner {
     word-break: break-word;
     width: 128px;
 }
-.icon-inner:hover {
+#grid .element-inner:hover {
     padding-bottom: 4px;
     position: absolute;
     background-color: white;
     z-index: 1;
     height: auto;
 }
-.thumbnail {
+
+#grid .thumbnail {
   height: 72px;
   width: 122px;
   position: relative;
+  margin: 3px;
 }
-.thumbnail img {
+#grid .thumbnail img {
   object-fit: scale-down;
   position: absolute;
   top: 50%;
@@ -68,21 +64,55 @@ h1 img {
   transform: translate(-50%,-50%);
 }
 
+#list {
+    padding-top: 12px;
+}
+#list .thumbnail {
+    float: left;
+    position: relative;
+    top: -6px;
+    padding-right: 6px;
+}
+#list .thumbnail img {
+  height: 32px;
+  width: 32px;
+}
+#list .element {
+    clear: both;
+    text-align: justify;
+    height: 36px;
+}
+
 a {
     color: #606060;
 }
-.icon a {
+.element a {
     font-size: larger;
 }
 
-.icon:hover .button {
-    visibility: visible;
-}
-.icon .button {
+.button {
+    vertical-align: bottom;
+    width: 16px;
+    height: 16px;
+    margin: 2px;
     visibility: hidden;
     cursor: pointer;
-    padding: 0;
 }
+.element:hover .button {
+    visibility: visible;
+}
+
+
+#grid .fiv-icon {
+    width: 72px;
+    height: 72px;
+    margin: 3px;
+}
+#list .fiv-icon {
+    width: 32px;
+    height: 32px;
+}
+
 
 #error {
     border: 2px solid red;
