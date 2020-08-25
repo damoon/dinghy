@@ -263,7 +263,7 @@ func (m MinioAdapter) deleteRecursive(ctx context.Context, prefix string) error 
 
 	ls, err := m.Client.ListObjectsV2WithContext(ctx, &s3.ListObjectsV2Input{
 		Bucket: aws.String(m.Bucket),
-		Prefix: aws.String(strings.TrimPrefix(filesDirectory, "/") + prefix + "/"),
+		Prefix: aws.String(strings.TrimPrefix(filesDirectory, "/") + prefix),
 	})
 	if err != nil {
 		span.LogFields(log.Error(err))
