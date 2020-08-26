@@ -8,13 +8,15 @@ stages:
 
 variables:
   TILT_NAMESPACE: ci-${CI_PROJECT_PATH_SLUG}-${CI_PIPELINE_ID}
-  DOCKER_HOST: ${DOCKER_HOST_DIND}
 
 deploy:
   stage: test
   image: tiltdev/tilt:v0.15.0
   timeout: 10m
+  before_script:
+    - kubectl apply -f hack/docker-daemon.yaml
+    - kubectl wait --for=condition=available --timeout=600s deployment/docker-in-docker
   script:
-    - PROD=1 tilt ci
+    - PROD=1 DOCKER_HOST=tcp://dind.${TILT_NAMESPACE}.svc:2375 tilt ci
   after_script:
     - kubectl delete ns ${TILT_NAMESPACE} --wait=false

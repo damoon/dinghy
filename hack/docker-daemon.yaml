@@ -35,7 +35,6 @@ spec:
       labels:
         app: docker-in-docker
     spec:
-      hostNetwork: true
       containers:
         - name: docker
           image: docker:19.03.12-dind
@@ -48,7 +47,7 @@ spec:
               --insecure-registry=10.0.0.0/8
               --insecure-registry=172.16.0.0/12
               --insecure-registry=192.168.0.0/16
-              --mtu=1400
+              --mtu=1200
           env:
             - name: DOCKER_DRIVER
               value: overlay2
@@ -60,11 +59,11 @@ spec:
                   fieldPath: status.podIP
           resources:
             requests:
-              memory: "8Gi"
-              cpu: "2000m"
+              memory: "6Gi"
+              cpu: "500m"
             limits:
-              memory: "8Gi"
-              cpu: "6000m"
+              memory: "6Gi"
+              cpu: "2000m"
           securityContext:
             privileged: true
           readinessProbe:
