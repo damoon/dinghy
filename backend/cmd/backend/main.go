@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -56,7 +55,6 @@ func main() {
 					&cli.StringFlag{Name: "s3-bucket", Required: true, Usage: "s3 bucket name."},
 					&cli.StringFlag{Name: "frontend-url", Required: true, Usage: "Frontend domain for CORS and redirects."},
 					&cli.StringFlag{Name: "notify-endpoint", Value: "notify:50051", Usage: "Notify service endpoint."},
-					&cli.BoolFlag{Name: "tls-insecure-skip-verify", Value: false, Usage: "Disable TLS verification."},
 				},
 				Action: run,
 			},
@@ -85,12 +83,6 @@ func main() {
 func run(c *cli.Context) error {
 	log.Printf("version: %v", gitRef)
 	log.Printf("git commit: %v", gitHash)
-
-	if c.Bool("tls-insecure-skip-verify") {
-		log.Println("insecure: disable TLS verification")
-
-		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	}
 
 	log.Println("set up metrics")
 
