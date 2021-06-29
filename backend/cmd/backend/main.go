@@ -143,7 +143,7 @@ func run(c *cli.Context) error {
 	svcHandler = middleware.RequestID(rand.Int63, svcHandler)
 	svcHandler = middleware.InitTraceContext(svcHandler)
 	svcHandler = middleware.InstrumentHttpHandler(svcHandler)
-	svcHandler = middleware.Timeout(29*time.Second, svcHandler)
+	svcHandler = middleware.Timeout(10*time.Minute, svcHandler)
 
 	svcServer := httpServer(svcHandler, c.String("service-addr"))
 
@@ -255,8 +255,8 @@ func setupJaeger() (io.Closer, error) {
 
 func httpServer(h http.Handler, addr string) *http.Server {
 	httpServer := &http.Server{
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  10 * time.Minute,
+		WriteTimeout: 10 * time.Minute,
 	}
 	httpServer.Addr = addr
 	httpServer.Handler = h
