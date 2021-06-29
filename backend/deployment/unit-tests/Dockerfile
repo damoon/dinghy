@@ -1,4 +1,4 @@
-FROM golang:1.14.4-stretch
+FROM golang:1.16.5-buster
 WORKDIR /app
 
 COPY go.mod .

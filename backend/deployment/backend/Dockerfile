@@ -1,5 +1,5 @@
 # build-env ###################################################
-FROM golang:1.15.0 AS build-env
+FROM golang:1.16.5-buster AS build-env
 WORKDIR /app
 
 RUN apt-get update

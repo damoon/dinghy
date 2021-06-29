@@ -1,4 +1,4 @@
-FROM golang:1.14.4-stretch AS build-env
+FROM golang:1.16.5-buster AS build-env
 
 RUN mkdir /tests
 WORKDIR /tests
