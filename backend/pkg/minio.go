@@ -118,55 +118,57 @@ func (m MinioAdapter) list(ctx context.Context, prefix string) (Directory, error
 
 	span.LogFields(log.String("prefix", prefix))
 
-	//	prefix = strings.TrimPrefix(prefix, "/")
-
 	l := Directory{
 		Path:        strings.TrimPrefix(prefix, "/"),
 		Directories: []string{},
 		Files:       []File{},
 	}
 
-	ls, err := m.Client.ListObjectsV2WithContext(ctx, &s3.ListObjectsV2Input{
+	perPage := func(page *s3.ListObjectsV2Output, lastPage bool) bool {
+		for _, object := range page.CommonPrefixes {
+			name := *object.Prefix
+			name = strings.TrimPrefix(name, filesDirectory+prefix)
+			name = strings.TrimSuffix(name, "/")
+			l.Directories = append(l.Directories, name)
+		}
+
+		for _, object := range page.Contents {
+			name := strings.TrimPrefix(*object.Key, filesDirectory+prefix)
+
+			redirect := ""
+			if shouldUsePresignRedirect(name) {
+				redirect = "?redirect"
+			}
+
+			url := strings.TrimPrefix(*object.Key+redirect, filesDirectory+"/")
+
+			file := File{
+				Name:        name,
+				Path:        prefix + name,
+				Size:        *object.Size,
+				DownloadURL: url,
+				Icon:        icon(name),
+				Archive:     canBeExtracted(name, l.Directories),
+			}
+
+			if thumbnailSupported(name) {
+				file.Thumbnail = url + "&thumbnail"
+			}
+
+			l.Files = append(l.Files, file)
+		}
+
+		return lastPage
+	}
+
+	err := m.Client.ListObjectsV2PagesWithContext(ctx, &s3.ListObjectsV2Input{
 		Bucket:    aws.String(m.Bucket),
 		Prefix:    aws.String(strings.TrimPrefix(filesDirectory, "/") + prefix),
 		Delimiter: aws.String("/"),
-	})
+	}, perPage)
 	if err != nil {
 		span.LogFields(log.Error(err))
 		return Directory{}, fmt.Errorf("list %s: %v", prefix, err)
-	}
-
-	for _, object := range ls.CommonPrefixes {
-		name := *object.Prefix
-		name = strings.TrimPrefix(name, filesDirectory+prefix)
-		name = strings.TrimSuffix(name, "/")
-		l.Directories = append(l.Directories, name)
-	}
-
-	for _, object := range ls.Contents {
-		name := strings.TrimPrefix(*object.Key, filesDirectory+prefix)
-
-		redirect := ""
-		if shouldUsePresignRedirect(name) {
-			redirect = "?redirect"
-		}
-
-		url := strings.TrimPrefix(*object.Key+redirect, filesDirectory+"/")
-
-		file := File{
-			Name:        name,
-			Path:        prefix + name,
-			Size:        *object.Size,
-			DownloadURL: url,
-			Icon:        icon(name),
-			Archive:     canBeExtracted(name, l.Directories),
-		}
-
-		if thumbnailSupported(name) {
-			file.Thumbnail = url + "&thumbnail"
-		}
-
-		l.Files = append(l.Files, file)
 	}
 
 	sort.Sort(byFileName(l.Files))
