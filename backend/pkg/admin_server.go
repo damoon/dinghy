@@ -2,7 +2,6 @@ package dinghy
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"net/http/pprof"
 
@@ -34,7 +33,7 @@ func (s *AdminServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *AdminServer) routes() {
 	s.router = http.NewServeMux()
-	s.router.HandleFunc("/healthz", s.handleHealthz())
+	s.router.HandleFunc("/healthz", handleHealthz)
 	s.router.Handle("/metrics", promhttp.Handler())
 	s.router.HandleFunc("/debug/pprof/", pprof.Index)
 	s.router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
@@ -43,12 +42,6 @@ func (s *AdminServer) routes() {
 	s.router.HandleFunc("/debug/pprof/trace", pprof.Trace)
 }
 
-func (s *AdminServer) handleHealthz() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		err := s.Storage.healthy(r.Context())
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusServiceUnavailable)
-		}
-	}
+func handleHealthz(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
