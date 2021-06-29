@@ -51,23 +51,6 @@ func (m MinioAdapter) exists(ctx context.Context, path string) (bool, string, st
 	return false, "", "", fmt.Errorf("stat object %s: %v", path, err)
 }
 
-func (m MinioAdapter) healthy(ctx context.Context) error {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: stat bucket")
-	defer span.Finish()
-
-	span.LogFields(log.String("bucket", m.Bucket))
-
-	_, err := m.Client.HeadBucketWithContext(ctx, &s3.HeadBucketInput{
-		Bucket: aws.String(m.Bucket),
-	})
-	if err != nil {
-		span.LogFields(log.Error(err))
-		return fmt.Errorf("check bucket: %v", err)
-	}
-
-	return nil
-}
-
 type Directory struct {
 	Path        string
 	Directories []string

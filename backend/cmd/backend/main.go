@@ -120,7 +120,6 @@ func run(c *cli.Context) error {
 	log.Println("set up servers")
 
 	adm := dinghy.NewAdminServer()
-	adm.Storage = storage
 	admHandler := middleware.RequestID(rand.Int63, adm)
 	admHandler = middleware.InitTraceContext(admHandler)
 	//admHandler = dinghy.InstrumentHttpHandler(admHandler) // reduce noise

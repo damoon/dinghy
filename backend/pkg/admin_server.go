@@ -1,22 +1,15 @@
 package dinghy
 
 import (
-	"context"
 	"net/http"
 	"net/http/pprof"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// Healthy allows to check the health of a service.
-type Healthy interface {
-	healthy(context.Context) error
-}
-
 // AdminServer answers to administration requests.
 type AdminServer struct {
-	router  *http.ServeMux
-	Storage Healthy
+	router *http.ServeMux
 }
 
 // NewAdminServer creates a new administration server.
