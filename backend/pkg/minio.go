@@ -178,7 +178,7 @@ func shouldUsePresignRedirect(name string) bool {
 }
 
 func (m MinioAdapter) presign(ctx context.Context, method, path string) (string, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: presign")
+	span, _ := opentracing.StartSpanFromContext(ctx, "s3: presign")
 	defer span.Finish()
 
 	span.LogFields(
@@ -323,7 +323,7 @@ func (m MinioAdapter) uploadRecursive(ctx context.Context, src, target string) e
 }
 
 func (m MinioAdapter) download(ctx context.Context, path string, w io.WriterAt) error {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "s3: download")
+	span, _ := opentracing.StartSpanFromContext(ctx, "s3: download")
 	defer span.Finish()
 
 	span.LogFields(

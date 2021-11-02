@@ -47,4 +47,5 @@ else:
 k8s_resource(
   'notify',
   port_forwards=['4080:8080', '50051:50051'],
+  resource_deps=['setup-s3-bucket', 'jaeger'],
 )

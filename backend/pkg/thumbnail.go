@@ -101,7 +101,7 @@ func resizeImage(ctx context.Context, f *os.File) (string, error) {
 		return "", fmt.Errorf("open image: %v", err)
 	}
 
-	spanCompute, ctx := opentracing.StartSpanFromContext(ctx, "compute thumbnail")
+	spanCompute, _ := opentracing.StartSpanFromContext(ctx, "compute thumbnail")
 	out := imaging.Fit(in, thumbnailWidth, thumbnailHeight, imaging.Lanczos)
 	spanCompute.Finish()
 
