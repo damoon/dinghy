@@ -10,7 +10,7 @@ spec:
     spec:
       containers:
         - name: mc
-          image: minio/mc:RELEASE.2020-05-16T01-44-37Z
+          image: quay.io/minio/mc:RELEASE.2021-10-07T04-19-58Z
           command:
             - sh
             - -c
@@ -56,7 +56,7 @@ spec:
     spec:
       containers:
         - name: mc
-          image: minio/mc:RELEASE.2020-05-16T01-44-37Z
+          image: quay.io/minio/mc:RELEASE.2021-10-07T04-19-58Z
           command:
             - sh
             - -c

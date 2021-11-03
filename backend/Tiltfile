@@ -54,7 +54,7 @@ else:
 k8s_resource(
   'backend',
   port_forwards=['8080', '8090'],
-  resource_deps=['setup-s3-bucket'],
+  resource_deps=['setup-s3-bucket', 'jaeger', 'notify'],
 )
 
 
