@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: minio
-          image: minio/minio:RELEASE.2021-06-17T00-10-46Z
+          image: minio/minio:RELEASE.2021-06-17T00-10-46Z@sha256:429b3934af4b387a00d1edc519da040d8d0d39879523b8fa2e85e8ec451a9736
           args:
             - server
             - /home/shared

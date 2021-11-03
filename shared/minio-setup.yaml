@@ -10,7 +10,7 @@ spec:
     spec:
       containers:
         - name: mc
-          image: quay.io/minio/mc:RELEASE.2021-10-07T04-19-58Z
+          image: quay.io/minio/mc:RELEASE.2021-10-07T04-19-58Z@sha256:b46dd550d8930d4a24eeeb3582b65c445974fd64c397d477ffb3932b685e1080
           command:
             - sh
             - -c
@@ -56,7 +56,7 @@ spec:
     spec:
       containers:
         - name: mc
-          image: quay.io/minio/mc:RELEASE.2021-10-07T04-19-58Z
+          image: quay.io/minio/mc:RELEASE.2021-10-07T04-19-58Z@sha256:b46dd550d8930d4a24eeeb3582b65c445974fd64c397d477ffb3932b685e1080
           command:
             - sh
             - -c
