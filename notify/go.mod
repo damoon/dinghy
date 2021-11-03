@@ -8,7 +8,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/opentracing-contrib/go-grpc v0.0.0-20191001143057-db30781987df
-	github.com/opentracing/opentracing-go v1.1.0
+	github.com/opentracing/opentracing-go v1.2.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/stretchr/testify v1.5.1 // indirect
 	github.com/uber/jaeger-client-go v2.24.0+incompatible
