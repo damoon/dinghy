@@ -1,5 +1,5 @@
 # build-env ###################################################
-FROM ymtszw/elm_for_ci:0.19.1 AS build-env
+FROM ymtszw/elm_for_ci:0.19.1@sha256:0871be293f662293b0e2cb81b2378eca9237242045e68434b4f6f22fb7fbfc7a AS build-env
 
 RUN yarn global add elm-live
 RUN apk add gettext
