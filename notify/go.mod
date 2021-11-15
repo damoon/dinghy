@@ -14,7 +14,7 @@ require (
 	github.com/uber/jaeger-lib v2.2.0+incompatible // indirect
 	github.com/urfave/cli/v2 v2.3.0
 	go.uber.org/atomic v1.6.0 // indirect
-	golang.org/x/net v0.0.0-20201021035429-f5854403a974
+	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
 	google.golang.org/grpc v1.42.0
 	google.golang.org/protobuf v1.27.1
 )
@@ -31,6 +31,6 @@ require (
 	github.com/russross/blackfriday/v2 v2.0.1 // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	golang.org/x/sys v0.0.0-20210603081109-ebe580a85c40 // indirect
-	golang.org/x/text v0.3.3 // indirect
+	golang.org/x/text v0.3.6 // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 )
