@@ -1,4 +1,4 @@
-FROM golang:1.17.3-buster@sha256:099de80fda2a712d3ee9f66f7f8b62061aad4b5e0ff43f66c86f16ba6a3a89cd
+FROM golang:1.17.3-buster@sha256:970e472a45917b6bb7a20b9d269216cebadc7fd3afd4ce6e4690636b562afa7c
 
 RUN mkdir /tests
 WORKDIR /tests
