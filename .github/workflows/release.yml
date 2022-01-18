@@ -36,7 +36,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@a66e35b9cbcf4ad0ea91ffcaf7bbad63ad9e0229 # renovate: tag=v2
+        uses: docker/build-push-action@1814d3dfb36d6f84174e61f4a4b05bd84089a4b9 # renovate: tag=v2
         with:
           context: backend
           file: backend/deployment/backend/Dockerfile
@@ -70,7 +70,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/notify
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@a66e35b9cbcf4ad0ea91ffcaf7bbad63ad9e0229 # renovate: tag=v2
+        uses: docker/build-push-action@1814d3dfb36d6f84174e61f4a4b05bd84089a4b9 # renovate: tag=v2
         with:
           context: notify
           file: notify/deployment/notify/Dockerfile
@@ -104,7 +104,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@a66e35b9cbcf4ad0ea91ffcaf7bbad63ad9e0229 # renovate: tag=v2
+        uses: docker/build-push-action@1814d3dfb36d6f84174e61f4a4b05bd84089a4b9 # renovate: tag=v2
         with:
           context: frontend
           file: frontend/deployment/Dockerfile
