@@ -12,7 +12,7 @@ variables:
 
 deploy:
   stage: test
-  image: tiltdev/tilt:v0.23.6@sha256:f0fbed8d9575301d375e23ee1338b8740c9cc9f1213baef32f7e4f72eed34bc8
+  image: tiltdev/tilt:v0.23.7@sha256:ae0afa73defc106bf6ac3ffa2174de8417ca3323f474c09a6160333fee0e28a9
   timeout: 10m
   script:
     - PROD=1 tilt ci
