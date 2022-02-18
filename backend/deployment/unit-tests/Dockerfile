@@ -1,4 +1,4 @@
-FROM golang:1.17.6-buster@sha256:a5ba2c081bc7174317ce7f54cf5689c2365454b11a5e271a911d6a2edec1163d
+FROM golang:1.17.7-buster@sha256:270086796f4fea7905b19889d33a6063e93eb6ad9c6fde11aaf3b2f82a757bef
 WORKDIR /app
 
 COPY go.mod .
