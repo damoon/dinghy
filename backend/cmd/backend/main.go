@@ -28,6 +28,7 @@ import (
 	"gitlab.com/davedamoon/dinghy/backend/pkg/middleware"
 	"gitlab.com/davedamoon/dinghy/backend/pkg/pb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
@@ -181,7 +182,7 @@ func setupNotifyClient(addr string) (*dinghy.NotifyAdapter, io.Closer, error) {
 
 	conn, err := grpc.Dial(
 		addr,
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(grpc_prometheus.UnaryClientInterceptor),
 		grpc.WithUnaryInterceptor(otgrpc.OpenTracingClientInterceptor(tracer)),
 		grpc.WithStreamInterceptor(grpc_prometheus.StreamClientInterceptor),
