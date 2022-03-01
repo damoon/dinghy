@@ -31,7 +31,7 @@ COPY pkg pkg
 RUN go install -ldflags="-X main.gitRef=${SOURCE_BRANCH} -X main.gitHash=${SOURCE_COMMIT}" ./cmd/notify
 
 ###############################################################
-FROM debian:buster@sha256:fde7a280413ec0122bd3a14dc76ba152f89cae999f3b8efe8784100df3640763
+FROM debian:buster@sha256:fd510d85d7e0691ca551fe08e8a2516a86c7f24601a940a299b5fe5cdd22c03a
 
 ENV JAEGER_SERVICE_NAME Dinghy-Notify
 ENV JAEGER_SAMPLER_TYPE const
