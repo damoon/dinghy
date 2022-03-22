@@ -19,7 +19,7 @@ require (
 	go.uber.org/atomic v1.6.0 // indirect
 	golang.org/x/image v0.0.0-20220321031419-a8550c1d254a
 	google.golang.org/grpc v1.45.0
-	google.golang.org/protobuf v1.27.1
+	google.golang.org/protobuf v1.28.0
 )
 
 require (
