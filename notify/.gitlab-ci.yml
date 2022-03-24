@@ -1,6 +1,6 @@
 lint notify:
   stage: test
-  image: golangci/golangci-lint:v1.45.0-alpine@sha256:e2e0e2d5016a35e80cce1c78f294384e006f4dd9e36fe39f8792a22c5ebd58e5
+  image: golangci/golangci-lint:v1.45.2-alpine@sha256:f785480652fef9878251e5f052ec0a2afc71005eb7c6817e3726de63cc49cd6d
   timeout: 10m
   script:
     - cd notify
