@@ -1,5 +1,5 @@
 # build-env ###################################################
-FROM golang:1.18.2-buster@sha256:11d168eae2d70b24f0926b73126fe739f91646d6f82e21d1b56dd5d571d8838b AS build-env
+FROM golang:1.18.2-buster@sha256:a66be0e47d87a1f0626aa8ab7f550d607091e52266fb14a3776615f6fa82d186 AS build-env
 WORKDIR /app
 
 RUN apt-get update
