@@ -12,7 +12,7 @@ require (
 	github.com/prometheus/client_golang v1.12.2
 	github.com/uber/jaeger-client-go v2.24.0+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible // indirect
-	github.com/urfave/cli/v2 v2.10.1
+	github.com/urfave/cli/v2 v2.10.2
 	go.uber.org/atomic v1.6.0 // indirect
 	golang.org/x/net v0.0.0-20220617184016-355a448f1bc9
 	google.golang.org/grpc v1.47.0
@@ -22,7 +22,7 @@ require (
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
