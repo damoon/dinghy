@@ -1,6 +1,6 @@
 module github.com/damoon/dinghy/shared/tests
 
-go 1.17
+go 1.18
 
 require github.com/chromedp/chromedp v0.8.2
 
