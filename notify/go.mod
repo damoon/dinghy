@@ -1,6 +1,6 @@
 module gitlab.com/davedamoon/dinghy/notify
 
-go 1.17
+go 1.18
 
 require (
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
