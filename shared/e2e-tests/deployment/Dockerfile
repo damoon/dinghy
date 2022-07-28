@@ -1,4 +1,4 @@
-FROM golang:1.18.4-buster@sha256:135b3520e4ecac1e3d4b2718ad10e8f1e2a84a8c2f5aa4e74e37810bb0b0c301 AS build-env
+FROM golang:1.18.4-buster@sha256:6960d62610b18b7224d2c5572b4bb177890b9ab7bf70ebaf34e2e9ca662a46e9 AS build-env
 
 RUN mkdir /tests
 WORKDIR /tests
