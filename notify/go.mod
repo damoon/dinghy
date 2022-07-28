@@ -16,7 +16,7 @@ require (
 	go.uber.org/atomic v1.6.0 // indirect
 	golang.org/x/net v0.0.0-20220728153142-1f511ac62c11
 	google.golang.org/grpc v1.48.0
-	google.golang.org/protobuf v1.28.0
+	google.golang.org/protobuf v1.28.1
 )
 
 require (
