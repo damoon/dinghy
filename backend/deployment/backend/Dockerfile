@@ -27,7 +27,7 @@ COPY pkg pkg
 RUN go install -ldflags="-X main.gitRef=${SOURCE_BRANCH} -X main.gitHash=${SOURCE_COMMIT}" ./cmd/backend
 
 ###############################################################
-FROM debian:bullseye@sha256:2ce44bbc00a79113c296d9d25524e15d423b23303fdbbe20190d2f96e0aeb251
+FROM debian:bullseye@sha256:82bab30ed448b8e2509aabe21f40f0607d905b7fd0dec72802627a20274eba55
 
 ENV JAEGER_SERVICE_NAME Dinghy
 ENV JAEGER_SAMPLER_TYPE const
