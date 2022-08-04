@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: jaeger
-          image: jaegertracing/all-in-one:1.36.0@sha256:1762f170446b38059ceecda0a399f582d495493c0c448f24431e78edb3f47a18
+          image: jaegertracing/all-in-one:1.37.0@sha256:60ab2e6b0682f79a4e42b2bd2526ac4de80a3a7a1ef136c71dc0cb85e9c50f46
           env:
             - name: SPAN_STORAGE_TYPE
               value: badger
