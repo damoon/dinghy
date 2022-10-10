@@ -15,7 +15,7 @@ require (
 	github.com/prometheus/client_golang v1.13.0
 	github.com/uber/jaeger-client-go v2.29.1+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible // indirect
-	github.com/urfave/cli/v2 v2.19.1
+	github.com/urfave/cli/v2 v2.19.2
 	go.uber.org/atomic v1.6.0 // indirect
 	golang.org/x/image v0.0.0-20220902085622-e7cb96979f69
 	google.golang.org/grpc v1.50.0
