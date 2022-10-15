@@ -18,7 +18,7 @@ require (
 	github.com/urfave/cli/v2 v2.19.2
 	go.uber.org/atomic v1.6.0 // indirect
 	golang.org/x/image v0.0.0-20220902085622-e7cb96979f69
-	google.golang.org/grpc v1.50.0
+	google.golang.org/grpc v1.50.1
 	google.golang.org/protobuf v1.28.1
 )
 
