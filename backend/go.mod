@@ -3,7 +3,7 @@ module gitlab.com/davedamoon/dinghy/backend
 go 1.19
 
 require (
-	github.com/aws/aws-sdk-go v1.44.124
+	github.com/aws/aws-sdk-go v1.44.125
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/disintegration/imaging v1.6.2
 	github.com/golang/protobuf v1.5.2
