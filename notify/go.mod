@@ -15,7 +15,7 @@ require (
 	github.com/urfave/cli/v2 v2.23.5
 	go.uber.org/atomic v1.6.0 // indirect
 	golang.org/x/net v0.2.0
-	google.golang.org/grpc v1.50.1
+	google.golang.org/grpc v1.51.0
 	google.golang.org/protobuf v1.28.1
 )
 
