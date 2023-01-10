@@ -2,10 +2,10 @@ module github.com/damoon/dinghy/shared/tests
 
 go 1.19
 
-require github.com/chromedp/chromedp v0.8.6
+require github.com/chromedp/chromedp v0.8.7
 
 require (
-	github.com/chromedp/cdproto v0.0.0-20220924210414-0e3390be1777 // indirect
+	github.com/chromedp/cdproto v0.0.0-20230109101555-6b041c6303cc // indirect
 	github.com/chromedp/sysutil v1.0.0 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
