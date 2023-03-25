@@ -1,6 +1,6 @@
 lint backend:
   stage: test
-  image: golangci/golangci-lint:v1.52.1-alpine@sha256:86eeb69f00a46a73f977c9868c4551dd1f60bef8186e097a288ed8885e3a0734
+  image: golangci/golangci-lint:v1.52.2-alpine@sha256:639dbebd312e31bb470ef70e83967eb2840a8cea39e857ac6494df2fe1b324fa
   timeout: 10m
   script:
     - cd backend
