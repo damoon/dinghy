@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
@@ -77,7 +76,7 @@ func run(c *cli.Context) error {
 	log.Printf("version: %v", gitRef)
 	log.Printf("git commit: %v", gitHash)
 
-	tokenBytes, err := ioutil.ReadFile(c.String("webhook-token-file"))
+	tokenBytes, err := os.ReadFile(c.String("webhook-token-file"))
 	if err != nil {
 		return fmt.Errorf("reading webhook token from %s: %v", c.String("webhook-token-file"), err)
 	}

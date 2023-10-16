@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -198,12 +197,12 @@ func setupNotifyClient(addr string) (*dinghy.NotifyAdapter, io.Closer, error) {
 
 func setupMinioAdapter(endpoint, accessKeyPath, secretKeyPath string,
 	useSSL bool, region, bucket string) (*dinghy.MinioAdapter, error) {
-	accessKeyBytes, err := ioutil.ReadFile(accessKeyPath)
+	accessKeyBytes, err := os.ReadFile(accessKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("reading secret access key from %s: %v", accessKeyPath, err)
 	}
 
-	secretKeyBytes, err := ioutil.ReadFile(secretKeyPath)
+	secretKeyBytes, err := os.ReadFile(secretKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("reading secret access key from %s: %v", secretKeyPath, err)
 	}
