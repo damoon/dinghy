@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"log"
 	"mime"
 	"net/http"
@@ -95,7 +94,7 @@ func (s *ServiceServer) download(ctx context.Context, etag, contentType string, 
 }
 
 func (s *ServiceServer) delieverFile(ctx context.Context, path string, w io.Writer) error {
-	tmpfile, err := ioutil.TempFile("", "s3_download")
+	tmpfile, err := os.CreateTemp("", "s3_download")
 	if err != nil {
 		return fmt.Errorf("create temp file: %v", err)
 	}
@@ -187,7 +186,7 @@ func (s *ServiceServer) put(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *ServiceServer) receiveFile(ctx context.Context, path string, r *http.Request) error {
-	tmpfile, err := ioutil.TempFile("", "s3_upload")
+	tmpfile, err := os.CreateTemp("", "s3_upload")
 	if err != nil {
 		return fmt.Errorf("create temp file: %v", err)
 	}

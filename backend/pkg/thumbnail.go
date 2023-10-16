@@ -7,7 +7,6 @@ import (
 	_ "image/gif"  // load gif image support
 	_ "image/jpeg" // load jpeg image support
 	"image/png"    // load png image support
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -58,7 +57,7 @@ func (s *ServiceServer) prepareThumbnail(ctx context.Context, etag, path string)
 		return thumbnailPath, nil
 	}
 
-	tmpfile, err := ioutil.TempFile("", "s3_download")
+	tmpfile, err := os.CreateTemp("", "s3_download")
 	if err != nil {
 		return "", fmt.Errorf("create temp file: %v", err)
 	}

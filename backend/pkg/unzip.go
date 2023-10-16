@@ -3,7 +3,6 @@ package dinghy
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -31,7 +30,7 @@ func (s ServiceServer) unzip(ctx context.Context, path string) error {
 		return fmt.Errorf("target %s exists", target)
 	}
 
-	tmpfile, err := ioutil.TempFile("", "s3_download_*"+ext)
+	tmpfile, err := os.CreateTemp("", "s3_download_*"+ext)
 	if err != nil {
 		return fmt.Errorf("create temp file: %v", err)
 	}
@@ -42,7 +41,7 @@ func (s ServiceServer) unzip(ctx context.Context, path string) error {
 		return fmt.Errorf("download: %v", err)
 	}
 
-	tmpDir, err := ioutil.TempDir("", "s3_download")
+	tmpDir, err := os.MkdirTemp("", "s3_download")
 	if err != nil {
 		return fmt.Errorf("create temp file: %v", err)
 	}
