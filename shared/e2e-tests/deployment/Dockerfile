@@ -14,7 +14,7 @@ RUN apt install -y ./chrome.deb
 
 COPY go.mod .
 COPY go.sum .
-RUN go mod download
+RUN GOPROXY=https://goproxy.io go mod download
 
 COPY main.go /tests/main.go
 RUN go build -o /go/bin/main .

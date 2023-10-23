@@ -3,9 +3,9 @@ WORKDIR /app
 
 COPY go.mod .
 COPY go.sum .
-RUN go mod download
+RUN GOPROXY=https://goproxy.io go mod download
 
 COPY cmd cmd
 COPY pkg pkg
 
-CMD ( go test ./... && echo "done" ) || echo "failed"
+CMD ( GOPROXY=https://goproxy.io go test ./... && echo "done" ) || echo "failed"
