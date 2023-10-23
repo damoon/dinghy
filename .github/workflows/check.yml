@@ -43,6 +43,8 @@ jobs:
     name: Verify tilt ci (development images)
     runs-on: ubuntu-latest
     steps:
+      - name: Remove unused binarys
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
       - name: Checkout git repo
         uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3
       - name: Create k8s Kind Cluster
@@ -60,6 +62,8 @@ jobs:
     name: Verify tilt ci (production images)
     runs-on: ubuntu-latest
     steps:
+      - name: Remove unused binarys
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
       - name: Checkout git repo
         uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3
       - name: Create k8s Kind Cluster
