@@ -21,7 +21,7 @@ RUN GRPC_HEALTH_PROBE_VERSION=v0.3.1 && \
 
 COPY go.mod .
 COPY go.sum .
-RUN go mod download
+RUN GOPROXY=https://goproxy.io go mod download
 
 ARG SOURCE_BRANCH
 ARG SOURCE_COMMIT
