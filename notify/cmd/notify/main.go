@@ -15,7 +15,6 @@ import (
 	"syscall"
 	"time"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	otgrpc "github.com/opentracing-contrib/go-grpc"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -113,12 +112,12 @@ func run(c *cli.Context) error {
 
 	tracer := opentracing.GlobalTracer()
 	grpcS := grpc.NewServer(
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+		grpc.ChainUnaryInterceptor(
 			grpc_prometheus.UnaryServerInterceptor,
-			otgrpc.OpenTracingServerInterceptor(tracer))),
-		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			otgrpc.OpenTracingServerInterceptor(tracer)),
+		grpc.ChainStreamInterceptor(
 			grpc_prometheus.StreamServerInterceptor,
-			otgrpc.OpenTracingStreamServerInterceptor(tracer))))
+			otgrpc.OpenTracingStreamServerInterceptor(tracer)))
 	pb.RegisterNotifierServer(grpcS, grpcServce)
 	grpc_prometheus.Register(grpcS)
 	grpc_health_v1.RegisterHealthServer(grpcS, health.NewServer())
