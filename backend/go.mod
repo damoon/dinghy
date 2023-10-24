@@ -1,6 +1,6 @@
 module gitlab.com/davedamoon/dinghy/backend
 
-go 1.19
+go 1.21
 
 require (
 	github.com/aws/aws-sdk-go v1.46.2
