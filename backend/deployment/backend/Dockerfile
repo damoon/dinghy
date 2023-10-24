@@ -1,9 +1,8 @@
 # build-env ###################################################
-FROM golang:1.21.3-bookworm@sha256:20f9ab52a8c3598ef13f86c9bc3b94db400e13df115ecacd8c3dfd0c0f060208 AS build-env
+FROM golang:1.21.3-alpine AS build-env
 WORKDIR /app
 
-RUN apt-get update
-RUN apt-get install -y entr
+RUN apk add --update --no-cache ca-certificates entr mailcap
 
 ENV JAEGER_SERVICE_NAME Dinghy
 ENV JAEGER_SAMPLER_TYPE const
@@ -27,16 +26,14 @@ COPY pkg pkg
 RUN go install -ldflags="-X main.gitRef=${SOURCE_BRANCH} -X main.gitHash=${SOURCE_COMMIT}" ./cmd/backend
 
 ###############################################################
-FROM debian:bookworm@sha256:7d3e8810c96a6a278c218eb8e7f01efaec9d65f50c54aae37421dc3cbeba6535
+FROM alpine:3.18.4
 
 ENV JAEGER_SERVICE_NAME Dinghy
 ENV JAEGER_SAMPLER_TYPE const
 ENV JAEGER_SAMPLER_PARAM 1.0
 ENV JAEGER_REPORTER_LOG_SPANS true
 
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+RUN apk add --update --no-cache ca-certificates
 
 COPY --from=build-env /etc/mime.types /etc/mime.types
 COPY --from=build-env /go/bin/backend /usr/local/bin/backend
