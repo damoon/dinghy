@@ -1,4 +1,4 @@
-FROM golang:1.21.4-bookworm@sha256:85aacbed94a248f792beb89198649ddbc730649054b397f8d689e9c4c4cceab7 AS build-env
+FROM golang:1.21.4-bookworm@sha256:690cc6dc987070de71f7dbeaf4d16cbc6f190d99283660a81afbf7baeb06d028 AS build-env
 
 RUN mkdir /tests
 WORKDIR /tests
