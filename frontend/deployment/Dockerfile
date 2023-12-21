@@ -18,7 +18,7 @@ RUN elm make src/Main.elm --optimize --output=./dist/main.js
 RUN uglifyjs ./dist/main.js --compress "pure_funcs=[F2,F3,F4,F5,F6,F7,F8,F9,A2,A3,A4,A5,A6,A7,A8,A9],pure_getters,keep_fargs=false,unsafe_comps,unsafe" | uglifyjs --mangle --output=./dist/main.js
 
 ###############################################################
-FROM nginx:1.25.3-alpine@sha256:ba48c86adff12f1849920b6175c328b58b589f68feb082de8677309718945a56
+FROM nginx:1.25.3-alpine@sha256:a59278fd22a9d411121e190b8cec8aa57b306aa3332459197777583beb728f59
 
 COPY deployment/envsubst-index.sh /docker-entrypoint.d/15-envsubst-index.sh
 
