@@ -17,7 +17,7 @@ require (
 	github.com/uber/jaeger-lib v2.2.0+incompatible // indirect
 	github.com/urfave/cli/v2 v2.27.1
 	go.uber.org/atomic v1.6.0 // indirect
-	golang.org/x/image v0.14.0
+	golang.org/x/image v0.15.0
 	google.golang.org/grpc v1.60.1
 	google.golang.org/protobuf v1.32.0
 )
