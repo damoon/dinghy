@@ -37,7 +37,7 @@ spec:
     spec:
       containers:
         - name: docker
-          image: docker:25.0.2-dind@sha256:8a010a734dbc8feda1c4a6609d328af2a8aad7f44f96afda2aa439b817414adb
+          image: docker:25.0.2-dind@sha256:c5353bc15e6746f7dec07a61346e9bbd2a19291d1e4306d15b745cb343dd84b5
           args:
             - sh
             - -c
