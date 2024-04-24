@@ -1,4 +1,4 @@
-FROM golang:1.22.2-bookworm@sha256:cafb443b26e25774290119a4fbc393776d8cdba83d999ffc1681f2ef8ccd6869
+FROM golang:1.22.2-bookworm@sha256:d0902bacefdde1cf45528c098d14e55d78c107def8a22d148eabd71582d7a99f
 
 RUN mkdir /tests
 WORKDIR /tests
