@@ -12,12 +12,12 @@ jobs:
       - name: Lint go code with golangci-lint
         uses: golangci/golangci-lint-action@9d1e0624a798bb64f6c3cea93db47765312263dc # v5
         with:
-          version: v1.57.2
+          version: v1.58.0
           working-directory: backend
       - name: Lint go code with golangci-lint
         uses: golangci/golangci-lint-action@9d1e0624a798bb64f6c3cea93db47765312263dc # v5
         with:
-          version: v1.57.2
+          version: v1.58.0
           working-directory: notify
   go-test:
     name: Verify go tests
